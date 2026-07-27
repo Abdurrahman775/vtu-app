@@ -28,6 +28,15 @@ provider charges the reseller.
 ## Status
 
 - [x] Route + debit/refund flow
+- [x] Test coverage (`web/tests/purchase.test.ts`) — covers the success,
+      provider-rejected, provider-throws, and insufficient-balance paths
+      against a real database. Writing these caught a real bug: `debitAndPurchase`
+      was returning the stale pre-update `Transaction` object (always
+      `status: PENDING`) instead of the row after the SUCCESS/FAILED
+      update — fixed in `web/src/lib/purchase.ts`. The purchase routes
+      themselves were unaffected (they compute status from the provider
+      `result`, not from `transaction.status`), but any other caller of
+      `debitAndPurchase` would have silently gotten wrong data.
 - [ ] Real VTU provider wired up — `vtuProvider.ts` calls a
       `VTU_PROVIDER_BASE_URL` that doesn't exist yet; provider choice is
       one of the client's Section 7 decisions in the proposal

@@ -22,7 +22,7 @@ export async function debitAndPurchase(params: {
   const { userId, type, provider, amountKobo, meta, call } = params;
   const reference = `${type.toLowerCase()}_${randomUUID()}`;
 
-  const transaction = await prisma.transaction.create({
+  let transaction = await prisma.transaction.create({
     data: { userId, type, provider, amountKobo, reference, status: "PENDING", meta },
   });
 
@@ -38,7 +38,7 @@ export async function debitAndPurchase(params: {
   try {
     const result = await call(reference);
 
-    await prisma.transaction.update({
+    transaction = await prisma.transaction.update({
       where: { id: transaction.id },
       data: {
         status: result.success ? "SUCCESS" : "FAILED",
@@ -58,7 +58,10 @@ export async function debitAndPurchase(params: {
 
     return { transaction, result };
   } catch (err) {
-    await prisma.transaction.update({ where: { id: transaction.id }, data: { status: "FAILED" } });
+    transaction = await prisma.transaction.update({
+      where: { id: transaction.id },
+      data: { status: "FAILED" },
+    });
     await postLedgerEntry({
       userId,
       type: LedgerEntryType.CREDIT,

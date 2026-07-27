@@ -43,9 +43,28 @@ npx tsc --noEmit         # typecheck
 npx prisma generate      # regenerate Prisma client after schema.prisma changes
 npx prisma migrate dev   # create + apply a migration (needs DATABASE_URL)
 npx prisma studio        # browse the DB
+npm run test             # vitest — needs a running Postgres + web/.env.test (see below)
 ```
 
-No test runner is configured yet.
+### Tests
+
+Integration tests run against a **real** Postgres database (`vtu_app_test`,
+separate from the dev DB), not mocks — `tests/helpers.ts`'s `resetDb()`
+truncates all tables in `beforeEach`. One-time setup:
+
+```bash
+sudo -u postgres psql -c "CREATE DATABASE vtu_app_test OWNER vtu_app;"
+cp web/.env.test.example web/.env.test   # adjust if your DB user/password differ
+cd web && npx dotenv -e .env.test -- npx prisma migrate deploy
+```
+
+`vitest.config.ts` sets `fileParallelism: false` — every test file shares
+the one live DB and truncates it in `beforeEach`, so files must run
+serially or they clobber each other's fixtures mid-test. Don't remove
+that setting without giving each file (or each test) its own isolated
+data instead. `tests/setup.ts` refuses to run at all unless
+`DATABASE_URL` contains `vtu_app_test`, as a guard against accidentally
+truncating the dev database.
 
 ### Mobile (`mobile/`)
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { generateOtpCode, hashOtp, otpExpiryDate, sendOtpSms } from "@/lib/otp";
+import { checkOtpRateLimit, generateOtpCode, hashOtp, otpExpiryDate, sendOtpSms } from "@/lib/otp";
 
 const bodySchema = z.object({
   phone: z.string().min(10).max(15),
@@ -13,6 +13,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
   }
   const { phone } = parsed.data;
+
+  if (!(await checkOtpRateLimit(phone))) {
+    return NextResponse.json(
+      { error: "Too many codes requested. Please try again later." },
+      { status: 429 },
+    );
+  }
 
   const code = generateOtpCode();
   const codeHash = await hashOtp(code);

@@ -33,4 +33,7 @@ helpers work for both mobile API calls and admin dashboard calls.
 - [x] Admin login (cookie-based)
 - [ ] Real SMS provider wired up (`sendOtpSms` currently logs to console
       in dev — see `SMS_PROVIDER_API_KEY` in `.env.example`)
-- [ ] Rate limiting on OTP request (needed before launch to prevent abuse)
+- [x] Rate limiting on OTP request — `checkOtpRateLimit`
+      (`web/src/lib/otp.ts`) caps requests to 3 per phone per 15-minute
+      window using the existing `OtpCode` rows, no separate store needed;
+      returns `429` once exceeded

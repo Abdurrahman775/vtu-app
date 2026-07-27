@@ -48,6 +48,9 @@ number.
 ## Status
 
 - [x] Ledger-backed balance with atomic credit/debit
+- [x] Test coverage (`web/tests/wallet.test.ts`) — kobo/naira conversion,
+      credit/debit against a real DB, and the insufficient-balance
+      rejection path all verified
 - [x] Paystack initialize + signed webhook
 - [x] Wallet-to-wallet transfer (see TRANSFER.md)
 - [ ] Second payment gateway (Phase 2, per proposal Section 5)

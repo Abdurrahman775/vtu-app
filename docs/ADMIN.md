@@ -27,8 +27,7 @@ authenticated shell.
 
 - [x] Auth-gated dashboard shell (transactions, users, pricing)
 - [x] Manual transaction resolution with correct ledger side-effects
-- [ ] Purchase routes don't yet apply `PricingRule.marginPercent` when
-      pricing a sale — currently `amountNaira` is passed straight through
-      from the client
+- [x] Purchase routes apply `PricingRule.marginPercent` — see
+      `web/src/lib/pricing.ts` and `docs/AIRTIME.md`
 - [ ] Dispute-resolution workflow, analytics (Phase 2, per proposal
       Section 5)

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSession, UnauthorizedError } from "@/lib/requireSession";
-import { toKobo } from "@/lib/wallet";
-import { debitAndPurchase, InsufficientBalanceError } from "@/lib/purchase";
+import { InsufficientBalanceError } from "@/lib/wallet";
+import { debitAndPurchase } from "@/lib/purchase";
+import { priceWithMargin } from "@/lib/pricing";
 import { purchaseAirtime } from "@/lib/services/vtuProvider";
 
 const bodySchema = z.object({
@@ -19,20 +20,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
     const { network, phone, amountNaira } = parsed.data;
-    const amountKobo = toKobo(amountNaira);
+
+    const { marginPercent, chargeAmountNaira, chargeAmountKobo } = await priceWithMargin({
+      service: "AIRTIME",
+      provider: network,
+      baseAmountNaira: amountNaira,
+    });
 
     const { transaction, result } = await debitAndPurchase({
       userId: session.userId,
       type: "AIRTIME",
       provider: network,
-      amountKobo,
-      meta: { phone },
+      amountKobo: chargeAmountKobo,
+      meta: { phone, baseAmountNaira: amountNaira, marginPercent },
       call: (reference) => purchaseAirtime({ network, phone, amountNaira, reference }),
     });
 
     return NextResponse.json({
       transactionId: transaction.id,
       reference: transaction.reference,
+      amountChargedNaira: chargeAmountNaira,
       status: result.success ? "SUCCESS" : "FAILED",
       message: result.message,
     });

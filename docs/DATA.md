@@ -2,8 +2,10 @@
 
 `POST /api/data/purchase` `{ network, phone, planCode, amountNaira }` for
 `MTN | AIRTEL | GLO | 9MOBILE`. Follows the exact same
-debit-then-call-provider-then-settle flow as [AIRTIME.md](./AIRTIME.md)
-via `debitAndPurchase`.
+margin-then-debit-then-call-provider-then-settle flow as
+[AIRTIME.md](./AIRTIME.md) via `priceWithMargin` + `debitAndPurchase` —
+`amountNaira` is the plan's base cost; the customer is charged that plus
+`PricingRule` margin for `(DATA, network)`.
 
 `planCode` identifies the specific bundle (e.g. "1GB - 30 days") on the
 upstream VTU provider. The mobile app currently ships a **hardcoded

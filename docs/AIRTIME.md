@@ -1,18 +1,29 @@
 # Airtime Purchase
 
 `POST /api/airtime/purchase` `{ network, phone, amountNaira }` for
-`MTN | AIRTEL | GLO | 9MOBILE`.
+`MTN | AIRTEL | GLO | 9MOBILE`. `amountNaira` is the **base/face value**
+of the airtime — what the customer actually receives, and what the VTU
+provider charges the reseller.
 
-Uses the shared `debitAndPurchase` helper (`web/src/lib/purchase.ts`):
-
-1. Create a `PENDING` `Transaction` (`type: AIRTIME`).
-2. Debit the wallet via `postLedgerEntry` (throws `InsufficientBalanceError`
-   → `402` if the balance can't cover it — debit happens **before** the
-   provider call so the wallet can't be double-spent by concurrent requests).
-3. Call `purchaseAirtime` (`web/src/lib/services/vtuProvider.ts`).
-4. On success mark the transaction `SUCCESS`; on failure (or a thrown
-   error) mark it `FAILED` and post a compensating `CREDIT` ledger entry
-   to refund the debit automatically.
+1. `priceWithMargin` (`web/src/lib/pricing.ts`) looks up the admin's
+   `PricingRule` for `(AIRTIME, network)` and marks the base amount up
+   by `marginPercent` — that marked-up amount is what actually gets
+   debited from the customer's wallet. No matching rule = 0% margin
+   (customer charged exactly the base amount).
+2. Uses the shared `debitAndPurchase` helper (`web/src/lib/purchase.ts`):
+   - Create a `PENDING` `Transaction` (`type: AIRTIME`) with the
+     **marked-up** `amountKobo`; `meta` records `baseAmountNaira` and
+     `marginPercent` for audit purposes.
+   - Debit the wallet via `postLedgerEntry` for the marked-up amount
+     (throws `InsufficientBalanceError` → `402` if the balance can't
+     cover it — debit happens **before** the provider call so the
+     wallet can't be double-spent by concurrent requests).
+   - Call `purchaseAirtime` (`web/src/lib/services/vtuProvider.ts`) with
+     the original **base** `amountNaira` — the provider only ever sees
+     the cost price, never the marked-up charge.
+   - On success mark the transaction `SUCCESS`; on failure (or a thrown
+     error) mark it `FAILED` and post a compensating `CREDIT` ledger
+     entry to refund the full marked-up debit automatically.
 
 ## Status
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSession, UnauthorizedError } from "@/lib/requireSession";
-import { toKobo } from "@/lib/wallet";
-import { debitAndPurchase, InsufficientBalanceError } from "@/lib/purchase";
+import { InsufficientBalanceError } from "@/lib/wallet";
+import { debitAndPurchase } from "@/lib/purchase";
+import { priceWithMargin } from "@/lib/pricing";
 import { purchaseCableSubscription } from "@/lib/services/vtuProvider";
 
 const bodySchema = z.object({
@@ -20,14 +21,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
     const { provider, smartCardNumber, planCode, amountNaira } = parsed.data;
-    const amountKobo = toKobo(amountNaira);
+
+    const { marginPercent, chargeAmountNaira, chargeAmountKobo } = await priceWithMargin({
+      service: "CABLE_TV",
+      provider,
+      baseAmountNaira: amountNaira,
+    });
 
     const { transaction, result } = await debitAndPurchase({
       userId: session.userId,
       type: "CABLE_TV",
       provider,
-      amountKobo,
-      meta: { smartCardNumber, planCode },
+      amountKobo: chargeAmountKobo,
+      meta: { smartCardNumber, planCode, baseAmountNaira: amountNaira, marginPercent },
       call: (reference) =>
         purchaseCableSubscription({ provider, smartCardNumber, planCode, reference }),
     });
@@ -35,6 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       transactionId: transaction.id,
       reference: transaction.reference,
+      amountChargedNaira: chargeAmountNaira,
       status: result.success ? "SUCCESS" : "FAILED",
       message: result.message,
     });

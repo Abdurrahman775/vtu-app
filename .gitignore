@@ -1,0 +1,15 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.claude/
+
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/local.properties
+mobile/ios/Flutter/Flutter.podspec
+mobile/*.iml

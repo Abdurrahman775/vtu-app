@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum LedgerEntryType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionType {
+  WALLET_FUNDING
+  AIRTIME
+  DATA
+  CABLE_TV
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REVERSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  fullName     String?
+  email        String?  @unique
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  wallet       Wallet?
+  transactions Transaction[]
+  otpCodes     OtpCode[]
+}
+
+/// Phone-number + OTP is the only auth flow in Phase 1 (no passwords).
+model OtpCode {
+  id          String    @id @default(cuid())
+  phone       String
+  codeHash    String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([phone])
+}
+
+/// balances are stored in kobo (integer) to avoid floating point drift.
+model Wallet {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  balanceKobo    BigInt   @default(0)
+  currency       String   @default("NGN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ledgerEntries  LedgerEntry[]
+}
+
+/// Append-only ledger: every wallet balance change must be recorded here.
+model LedgerEntry {
+  id                String          @id @default(cuid())
+  walletId          String
+  wallet            Wallet          @relation(fields: [walletId], references: [id])
+  type              LedgerEntryType
+  amountKobo        BigInt
+  balanceAfterKobo  BigInt
+  reference         String          @unique
+  description       String
+  transactionId     String?         @unique
+  transaction       Transaction?    @relation(fields: [transactionId], references: [id])
+  createdAt         DateTime        @default(now())
+}
+
+model Transaction {
+  id                 String            @id @default(cuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id])
+  type               TransactionType
+  provider           String
+  amountKobo         BigInt
+  status             TransactionStatus @default(PENDING)
+  reference          String            @unique
+  providerReference  String?
+  meta               Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  ledgerEntry        LedgerEntry?
+}
+
+/// Admin-configurable margin per provider/service, used to price purchases above cost.
+model PricingRule {
+  id            String          @id @default(cuid())
+  service       TransactionType
+  provider      String
+  marginPercent Float           @default(0)
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([service, provider])
+}

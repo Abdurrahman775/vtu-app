@@ -3,7 +3,10 @@
 Server-rendered pages under `web/src/app/admin/*`, protected by
 `web/proxy.ts` (redirects to `/admin/login` unless the `admin_session`
 cookie holds a valid `ADMIN`-role JWT). See [AUTH.md](./AUTH.md) for how
-admin login works.
+admin login works. Styled with Tailwind (installed by `create-next-app
+--tailwind`); `web/src/app/admin/layout.tsx` hides the sidebar nav on
+`/admin/login` via `usePathname`, since that page isn't part of the
+authenticated shell.
 
 ## Pages
 

@@ -22,6 +22,7 @@ enum TransactionType {
   AIRTIME
   DATA
   CABLE_TV
+  TRANSFER
 }
 
 enum TransactionStatus {
@@ -68,6 +69,14 @@ model Wallet {
   user           User     @relation(fields: [userId], references: [id])
   balanceKobo    BigInt   @default(0)
   currency       String   @default("NGN")
+
+  /// Dedicated virtual account (Paystack DVA or similar) for bank-transfer
+  /// funding — nullable because provisioning one requires business KYB
+  /// approval not yet in place; null until that's wired up.
+  virtualAccountNumber   String?
+  virtualAccountBankName String?
+  virtualAccountName     String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

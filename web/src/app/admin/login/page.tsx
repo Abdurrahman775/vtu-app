@@ -40,32 +40,40 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 360, margin: "80px auto" }}>
-      <h1>Admin Login</h1>
-      <input
-        placeholder="Phone number"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        style={{ display: "block", width: "100%", marginBottom: 8, padding: 8 }}
-      />
-      {!otpSent ? (
-        <button onClick={requestOtp} style={{ padding: 8, width: "100%" }}>
-          Send code
-        </button>
-      ) : (
-        <>
-          <input
-            placeholder="6-digit code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            style={{ display: "block", width: "100%", marginBottom: 8, padding: 8 }}
-          />
-          <button onClick={verifyAndLogin} style={{ padding: 8, width: "100%" }}>
-            Verify & sign in
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 to-blue-700 px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl">
+        <h1 className="mb-6 text-xl font-semibold text-slate-900">Admin Login</h1>
+        <input
+          placeholder="Phone number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="mb-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+        />
+        {!otpSent ? (
+          <button
+            onClick={requestOtp}
+            className="w-full rounded-lg bg-blue-700 py-2 text-sm font-medium text-white hover:bg-blue-800 transition-colors"
+          >
+            Send code
           </button>
-        </>
-      )}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        ) : (
+          <>
+            <input
+              placeholder="6-digit code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="mb-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+            />
+            <button
+              onClick={verifyAndLogin}
+              className="w-full rounded-lg bg-blue-700 py-2 text-sm font-medium text-white hover:bg-blue-800 transition-colors"
+            >
+              Verify & sign in
+            </button>
+          </>
+        )}
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      </div>
     </div>
   );
 }

@@ -50,7 +50,7 @@ class _CableScreenState extends ConsumerState<CableScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              initialValue: _provider,
+              value: _provider,
               items: cablePlansByProvider.keys
                   .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                   .toList(),
@@ -68,7 +68,7 @@ class _CableScreenState extends ConsumerState<CableScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<CablePlan>(
-              initialValue: _plan,
+              value: _plan,
               items: plans
                   .map((p) => DropdownMenuItem(
                         value: p,

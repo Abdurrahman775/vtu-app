@@ -15,9 +15,19 @@ export function ResolveButton({ transactionId }: { transactionId: string }) {
   }
 
   return (
-    <span style={{ display: "flex", gap: 4 }}>
-      <button onClick={() => resolve("SUCCESS")}>Mark success</button>
-      <button onClick={() => resolve("FAILED")}>Mark failed</button>
-    </span>
+    <div className="flex gap-2">
+      <button
+        onClick={() => resolve("SUCCESS")}
+        className="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+      >
+        Mark success
+      </button>
+      <button
+        onClick={() => resolve("FAILED")}
+        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+      >
+        Mark failed
+      </button>
+    </div>
   );
 }

@@ -21,20 +21,35 @@ export function PricingForm() {
   }
 
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-      <select value={service} onChange={(e) => setService(e.target.value as typeof service)}>
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl bg-white p-4 shadow-sm">
+      <select
+        value={service}
+        onChange={(e) => setService(e.target.value as typeof service)}
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+      >
         {SERVICES.map((s) => (
           <option key={s} value={s}>{s}</option>
         ))}
       </select>
-      <input placeholder="Provider (e.g. MTN)" value={provider} onChange={(e) => setProvider(e.target.value)} />
+      <input
+        placeholder="Provider (e.g. MTN)"
+        value={provider}
+        onChange={(e) => setProvider(e.target.value)}
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+      />
       <input
         type="number"
         placeholder="Margin %"
         value={marginPercent}
         onChange={(e) => setMarginPercent(Number(e.target.value))}
+        className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm"
       />
-      <button onClick={submit}>Save</button>
+      <button
+        onClick={submit}
+        className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+      >
+        Save
+      </button>
     </div>
   );
 }

@@ -18,12 +18,18 @@ This is a monorepo with two apps sharing one backend contract:
   separate backend service.
 - `mobile/` — Flutter app (Dart), the end-user client. Calls the same
   `web/` API over HTTP.
-- `docs/` — one markdown file per Phase 1 feature (`AUTH.md`,
-  `WALLET.md`, `AIRTIME.md`, `DATA.md`, `CABLE.md`, `ADMIN.md`), each
+- `docs/` — one markdown file per feature (`AUTH.md`, `WALLET.md`,
+  `AIRTIME.md`, `DATA.md`, `CABLE.md`, `TRANSFER.md`, `ADMIN.md`), each
   with a design summary and a Status checklist of what's implemented vs.
   still stubbed. Update the relevant doc's Status section whenever you
   finish or start a feature area — that checklist is the source of truth
   for what's real vs. placeholder.
+
+The mobile Home screen follows a specific UI mockup (a wallet-balance
+card + Quick Services grid + Recent Transactions list); `GET /api/me`
+exists specifically to feed that screen's greeting/balance header in one
+call. Don't restyle it without checking `mobile/lib/src/features/home/screens/home_tab.dart`
+against the original design intent first.
 
 ## Commands
 
@@ -112,6 +118,13 @@ reimplementing the debit/refund dance. See `docs/AIRTIME.md`,
 API (VTpass, Baxi, etc.) is a client decision not yet made, so purchases
 will fail against real traffic until `VTU_PROVIDER_BASE_URL`/`_API_KEY`
 point at a real provider.
+
+### Wallet-to-wallet transfer is a different code path than purchases
+
+`web/src/lib/transfer.ts`'s `transferFunds` debits one wallet and
+credits another inside a single `prisma.$transaction` — it does not
+reuse `postLedgerEntry`/`debitAndPurchase` (which only touch one wallet
+at a time). See `docs/TRANSFER.md`.
 
 ### Data model
 

@@ -50,7 +50,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              initialValue: _network,
+              value: _network,
               items: dataPlansByNetwork.keys
                   .map((n) => DropdownMenuItem(value: n, child: Text(n)))
                   .toList(),
@@ -68,7 +68,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<DataPlan>(
-              initialValue: _plan,
+              value: _plan,
               items: plans
                   .map((p) => DropdownMenuItem(
                         value: p,

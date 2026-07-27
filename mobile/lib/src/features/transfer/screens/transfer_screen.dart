@@ -1,22 +1,22 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../airtime_repository.dart';
+import '../transfer_repository.dart';
+import '../../me/me_repository.dart';
 
-const _networks = ['MTN', 'AIRTEL', 'GLO', '9MOBILE'];
-
-class AirtimeScreen extends ConsumerStatefulWidget {
-  const AirtimeScreen({super.key});
+class TransferScreen extends ConsumerStatefulWidget {
+  const TransferScreen({super.key});
 
   @override
-  ConsumerState<AirtimeScreen> createState() => _AirtimeScreenState();
+  ConsumerState<TransferScreen> createState() => _TransferScreenState();
 }
 
-class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
+class _TransferScreenState extends ConsumerState<TransferScreen> {
   final _phoneController = TextEditingController();
   final _amountController = TextEditingController();
-  String _network = _networks.first;
   bool _loading = false;
   String? _message;
+  bool _success = false;
 
   Future<void> _submit() async {
     final amount = double.tryParse(_amountController.text);
@@ -27,14 +27,22 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
       _message = null;
     });
     try {
-      await ref.read(airtimeRepositoryProvider).purchase(
-            network: _network,
-            phone: _phoneController.text.trim(),
+      await ref.read(transferRepositoryProvider).transfer(
+            toPhone: _phoneController.text.trim(),
             amountNaira: amount,
           );
-      setState(() => _message = 'Airtime purchase submitted');
-    } catch (e) {
-      setState(() => _message = 'Purchase failed. Please try again.');
+      setState(() {
+        _success = true;
+        _message = 'Transfer successful';
+      });
+      _phoneController.clear();
+      _amountController.clear();
+      ref.invalidate(meProvider);
+    } on DioException catch (e) {
+      setState(() {
+        _success = false;
+        _message = e.response?.data?['error'] as String? ?? 'Transfer failed';
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -42,24 +50,27 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final me = ref.watch(meProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Buy Airtime')),
+      appBar: AppBar(title: const Text('Transfer')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DropdownButtonFormField<String>(
-              value: _network,
-              items: _networks.map((n) => DropdownMenuItem(value: n, child: Text(n))).toList(),
-              onChanged: (v) => setState(() => _network = v ?? _network),
-              decoration: const InputDecoration(labelText: 'Network'),
+            me.maybeWhen(
+              data: (m) => Text(
+                'Available balance: ₦${m.wallet.balanceNaira.toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              orElse: () => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Phone number'),
+              decoration: const InputDecoration(labelText: "Recipient's phone number"),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -69,7 +80,7 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
             ),
             if (_message != null) ...[
               const SizedBox(height: 8),
-              Text(_message!),
+              Text(_message!, style: TextStyle(color: _success ? Colors.green : Colors.red)),
             ],
             const SizedBox(height: 16),
             FilledButton(
@@ -77,7 +88,7 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
               child: _loading
                   ? const SizedBox(
                       height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Buy airtime'),
+                  : const Text('Send'),
             ),
           ],
         ),

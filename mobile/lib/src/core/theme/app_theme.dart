@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  static const seedColor = Color(0xFF0B6E4F);
+  static const seedColor = Color(0xFF1D4ED8);
+  static const walletGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF0F2A6B), Color(0xFF1D4ED8)],
+  );
 
   static ThemeData light() {
     return ThemeData(

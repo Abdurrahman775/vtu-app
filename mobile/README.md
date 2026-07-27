@@ -1,31 +1,36 @@
 # VTU App — Mobile (Flutter)
 
 Wallet-based airtime, data, and cable TV reselling app. Talks to the
-`web/` Next.js API (`API_BASE_URL`, defaults to the Android emulator's
-host loopback `10.0.2.2:3000`).
+`web/` Next.js API.
 
 ## Setup
 
-This scaffold was hand-written without the Flutter CLI (it isn't
-installed in the environment that generated it), so the native
-`android/` and `ios/` project folders are **not** present yet. Once you
-have the Flutter SDK installed locally, run this once from `mobile/`:
+The **web** platform is scaffolded (`flutter create --platforms=web`),
+so `flutter run -d chrome` works out of the box — no Android SDK or
+emulator needed for day-to-day development. Android/iOS aren't scaffolded
+yet; add them when a real device build is actually needed:
 
 ```bash
-flutter create --project-name vtu_app --org com.vtuapp .
-flutter pub get
+flutter create --platforms=android,ios .
 ```
 
-This backfills the native platform folders without touching `lib/`,
-`pubspec.yaml`, or `analysis_options.yaml`.
+This only backfills the native platform folders — it never touches
+`lib/`, `pubspec.yaml`, or `analysis_options.yaml`, so it's safe to run
+against the existing project.
 
 ## Common commands
 
 ```bash
 flutter pub get                 # install dependencies
-flutter run                     # run on a connected device/emulator
-flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000/api
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api
 flutter analyze                 # lint
 flutter test                    # run tests
-flutter build apk --release     # release APK for Phase 1 launch
+flutter build apk --release     # release APK (once Android is scaffolded)
 ```
+
+`API_BASE_URL` defaults to `http://10.0.2.2:3000/api`, the Android
+emulator's alias for the host machine — **always override it for Chrome**
+(`http://localhost:3000/api`) or a real device (`http://<your-lan-ip>:3000/api`).
+The backend sends permissive CORS headers on `/api/**` (see
+`web/src/proxy.ts`) specifically so a browser-hosted build can reach it
+across origins.

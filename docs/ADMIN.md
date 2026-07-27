@@ -25,7 +25,14 @@ authenticated shell.
 
 ## Status
 
-- [x] Auth-gated dashboard shell (transactions, users, pricing)
+- [x] Auth-gated dashboard shell (transactions, users, pricing) —
+      verified live with `curl`: `/admin/transactions` 307-redirects to
+      `/admin/login` when unauthenticated. This was actually broken
+      until `proxy.ts` was moved to `web/src/proxy.ts` (see root
+      `CLAUDE.md`'s proxy.ts note) — it silently never ran while sitting
+      at the project root, so the admin pages had **no real auth
+      protection** despite the code looking correct. If you're auditing
+      security on this app, re-verify this redirect still works.
 - [x] Manual transaction resolution with correct ledger side-effects
 - [x] Purchase routes apply `PricingRule.marginPercent` — see
       `web/src/lib/pricing.ts` and `docs/AIRTIME.md`

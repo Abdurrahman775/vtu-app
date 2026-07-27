@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../api/api_client.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -9,6 +10,10 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
+      // Shown briefly while the redirect below checks secure storage for a
+      // token, so a slow read shows a spinner instead of a blank screen.
+      builder: (context, state) =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       redirect: (context, state) async {
         final token = await ApiClient.instance.readToken();
         return token != null ? HomeScreen.routePath : '/login';

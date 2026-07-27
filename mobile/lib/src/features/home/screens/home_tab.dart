@@ -365,7 +365,7 @@ class _ServiceTile extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.seedColor.withOpacity(0.08),
+              color: AppTheme.seedColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(item.icon, color: AppTheme.seedColor),
@@ -391,7 +391,7 @@ class _TransactionTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        backgroundColor: (_isCredit ? Colors.green : Colors.orange).withOpacity(0.12),
+        backgroundColor: (_isCredit ? Colors.green : Colors.orange).withValues(alpha: 0.12),
         child: Icon(
           _isCredit ? Icons.arrow_downward : Icons.arrow_upward,
           color: _isCredit ? Colors.green : Colors.orange,

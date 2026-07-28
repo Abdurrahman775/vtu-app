@@ -64,6 +64,10 @@ class MeRepository {
     final response = await _api.dio.get(Endpoints.me);
     return Me.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<void> updateFullName(String fullName) async {
+    await _api.dio.patch(Endpoints.me, data: {'fullName': fullName});
+  }
 }
 
 final meRepositoryProvider = Provider<MeRepository>((ref) {

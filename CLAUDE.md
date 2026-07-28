@@ -28,8 +28,10 @@ This is a monorepo with two apps sharing one backend contract:
 The mobile Home screen follows a specific UI mockup (a wallet-balance
 card + Quick Services grid + Recent Transactions list); `GET /api/me`
 exists specifically to feed that screen's greeting/balance header in one
-call. Don't restyle it without checking `mobile/lib/src/features/home/screens/home_tab.dart`
-against the original design intent first.
+call, and `PATCH /api/me` (`{ fullName }`) lets a user set their display
+name from the Profile screen (`mobile/lib/src/features/profile/screens/profile_screen.dart`).
+Don't restyle the Home tab without checking it against the original
+design intent first.
 
 ## Commands
 

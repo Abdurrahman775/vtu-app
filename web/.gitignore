@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# user-uploaded avatars (local-disk stopgap, see docs/PROFILE_MEDIA.md)
+/public/uploads/

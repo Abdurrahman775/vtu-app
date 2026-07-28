@@ -44,13 +44,42 @@ model User {
   email        String?  @unique
   role         Role     @default(USER)
   isActive     Boolean  @default(true)
+
+  /// Local file path under public/uploads for now — see docs/PROFILE_MEDIA.md
+  /// for why this needs to move to real object storage before production.
+  avatarUrl    String?
+
+  /// Set by an admin approving a VerificationRequest, not self-service.
+  isVerified   Boolean  @default(false)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  wallet       Wallet?
-  transactions Transaction[]
-  otpCodes     OtpCode[]
-  reports      TransactionReport[]
+  wallet               Wallet?
+  transactions         Transaction[]
+  otpCodes             OtpCode[]
+  reports              TransactionReport[]
+  verificationRequests VerificationRequest[]
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Lightweight identity-verification flow: user submits a request (with an
+/// optional note), an admin approves/rejects it, approval flips
+/// User.isVerified so the profile shows a "Verified" badge. This is not a
+/// real KYC document-upload pipeline — see docs/VERIFICATION.md.
+model VerificationRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id])
+  note       String?
+  status     VerificationStatus  @default(PENDING)
+  createdAt  DateTime            @default(now())
+  reviewedAt DateTime?
 }
 
 /// Phone-number + OTP is the only auth flow in Phase 1 (no passwords).

@@ -9,7 +9,10 @@ export async function GET(request: Request) {
     const session = requireSession(request);
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: session.userId },
-      include: { wallet: true },
+      include: {
+        wallet: true,
+        verificationRequests: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
     });
 
     return NextResponse.json({
@@ -18,6 +21,9 @@ export async function GET(request: Request) {
         phone: user.phone,
         fullName: user.fullName,
         role: user.role,
+        avatarUrl: user.avatarUrl,
+        isVerified: user.isVerified,
+        latestVerificationRequestStatus: user.verificationRequests[0]?.status ?? null,
       },
       wallet: user.wallet && {
         balanceNaira: toNaira(user.wallet.balanceKobo),

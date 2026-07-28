@@ -29,7 +29,14 @@ export default async function AdminUsersPage() {
           <tbody>
             {users.map((user) => (
               <tr key={user.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-3 text-slate-900">{user.phone}</td>
+                <td className="px-4 py-3 text-slate-900">
+                  <span className="flex items-center gap-1.5">
+                    {user.phone}
+                    {user.isVerified && (
+                      <span title="Identity verified" className="text-blue-600">✓</span>
+                    )}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${

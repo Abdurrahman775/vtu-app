@@ -24,19 +24,27 @@ async function getMarginRevenueNaira() {
 }
 
 export default async function AdminOverviewPage() {
-  const [userCount, walletSum, statusCounts, recentTransactions, marginRevenueNaira, openReportCount] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.wallet.aggregate({ _sum: { balanceKobo: true } }),
-      prisma.transaction.groupBy({ by: ["status"], _count: { _all: true } }),
-      prisma.transaction.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: { user: true },
-      }),
-      getMarginRevenueNaira(),
-      prisma.transactionReport.count({ where: { status: "OPEN" } }),
-    ]);
+  const [
+    userCount,
+    walletSum,
+    statusCounts,
+    recentTransactions,
+    marginRevenueNaira,
+    openReportCount,
+    pendingVerificationCount,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.wallet.aggregate({ _sum: { balanceKobo: true } }),
+    prisma.transaction.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.transaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { user: true },
+    }),
+    getMarginRevenueNaira(),
+    prisma.transactionReport.count({ where: { status: "OPEN" } }),
+    prisma.verificationRequest.count({ where: { status: "PENDING" } }),
+  ]);
 
   const countByStatus = Object.fromEntries(
     statusCounts.map((s) => [s.status, s._count._all]),
@@ -79,9 +87,18 @@ export default async function AdminOverviewPage() {
       {openReportCount > 0 && (
         <Link
           href="/admin/reports"
-          className="mb-8 block rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 hover:bg-red-100"
+          className="mb-4 block rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 hover:bg-red-100"
         >
           {openReportCount} unresolved user report{openReportCount === 1 ? "" : "s"} →
+        </Link>
+      )}
+
+      {pendingVerificationCount > 0 && (
+        <Link
+          href="/admin/verification"
+          className="mb-8 block rounded-xl bg-blue-50 p-4 text-sm font-medium text-blue-800 hover:bg-blue-100"
+        >
+          {pendingVerificationCount} verification request{pendingVerificationCount === 1 ? "" : "s"} awaiting review →
         </Link>
       )}
 
@@ -115,6 +132,9 @@ export default async function AdminOverviewPage() {
             </Link>
             <Link href="/admin/pricing" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50">
               Adjust pricing & margins
+            </Link>
+            <Link href="/admin/verification" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50">
+              Review verification requests
             </Link>
           </div>
         </div>

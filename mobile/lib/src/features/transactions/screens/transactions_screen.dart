@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../transactions_repository.dart';
+import 'transaction_detail_screen.dart';
 
 class TransactionsScreen extends ConsumerWidget {
   const TransactionsScreen({super.key});
@@ -34,6 +35,11 @@ class TransactionsScreen extends ConsumerWidget {
                           Text('₦${t.amountNaira.toStringAsFixed(2)}'),
                           Text(t.status, style: TextStyle(color: _statusColor(t.status))),
                         ],
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TransactionDetailScreen(transactionId: t.id),
+                        ),
                       ),
                     );
                   },

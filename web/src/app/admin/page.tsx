@@ -24,7 +24,7 @@ async function getMarginRevenueNaira() {
 }
 
 export default async function AdminOverviewPage() {
-  const [userCount, walletSum, statusCounts, recentTransactions, marginRevenueNaira] =
+  const [userCount, walletSum, statusCounts, recentTransactions, marginRevenueNaira, openReportCount] =
     await Promise.all([
       prisma.user.count(),
       prisma.wallet.aggregate({ _sum: { balanceKobo: true } }),
@@ -35,6 +35,7 @@ export default async function AdminOverviewPage() {
         include: { user: true },
       }),
       getMarginRevenueNaira(),
+      prisma.transactionReport.count({ where: { status: "OPEN" } }),
     ]);
 
   const countByStatus = Object.fromEntries(
@@ -69,9 +70,18 @@ export default async function AdminOverviewPage() {
       {pendingCount > 0 && (
         <Link
           href="/admin/transactions"
-          className="mb-8 block rounded-xl bg-amber-50 p-4 text-sm font-medium text-amber-800 hover:bg-amber-100"
+          className="mb-4 block rounded-xl bg-amber-50 p-4 text-sm font-medium text-amber-800 hover:bg-amber-100"
         >
           {pendingCount} transaction{pendingCount === 1 ? "" : "s"} pending manual resolution →
+        </Link>
+      )}
+
+      {openReportCount > 0 && (
+        <Link
+          href="/admin/reports"
+          className="mb-8 block rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 hover:bg-red-100"
+        >
+          {openReportCount} unresolved user report{openReportCount === 1 ? "" : "s"} →
         </Link>
       )}
 

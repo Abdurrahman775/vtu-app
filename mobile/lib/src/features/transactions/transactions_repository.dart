@@ -32,6 +32,42 @@ class TransactionSummary {
       );
 }
 
+class TransactionDetail {
+  const TransactionDetail({
+    required this.id,
+    required this.type,
+    required this.provider,
+    required this.amountNaira,
+    required this.status,
+    required this.reference,
+    required this.providerReference,
+    required this.meta,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String type;
+  final String provider;
+  final double amountNaira;
+  final String status;
+  final String reference;
+  final String? providerReference;
+  final Map<String, dynamic>? meta;
+  final DateTime createdAt;
+
+  factory TransactionDetail.fromJson(Map<String, dynamic> json) => TransactionDetail(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        provider: json['provider'] as String,
+        amountNaira: (json['amountNaira'] as num).toDouble(),
+        status: json['status'] as String,
+        reference: json['reference'] as String,
+        providerReference: json['providerReference'] as String?,
+        meta: json['meta'] as Map<String, dynamic>?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
 class TransactionsRepository {
   TransactionsRepository(this._api);
 
@@ -44,6 +80,18 @@ class TransactionsRepository {
         .map((item) => TransactionSummary.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  Future<TransactionDetail> getById(String id) async {
+    final response = await _api.dio.get('${Endpoints.transactions}/$id');
+    return TransactionDetail.fromJson(response.data['transaction'] as Map<String, dynamic>);
+  }
+
+  Future<void> reportProblem(String id, {required String reason, String? message}) async {
+    await _api.dio.post('${Endpoints.transactions}/$id/report', data: {
+      'reason': reason,
+      if (message != null && message.isNotEmpty) 'message': message,
+    });
+  }
 }
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
@@ -52,4 +100,9 @@ final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
 
 final transactionsProvider = FutureProvider.autoDispose<List<TransactionSummary>>((ref) {
   return ref.read(transactionsRepositoryProvider).list();
+});
+
+final transactionDetailProvider =
+    FutureProvider.autoDispose.family<TransactionDetail, String>((ref, id) {
+  return ref.read(transactionsRepositoryProvider).getById(id);
 });

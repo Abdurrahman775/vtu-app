@@ -22,9 +22,9 @@ export default async function AdminPricingPage() {
           <tbody>
             {rules.map((r) => (
               <tr key={r.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-3">{r.service}</td>
-                <td className="px-4 py-3">{r.provider}</td>
-                <td className="px-4 py-3">{r.marginPercent}%</td>
+                <td className="px-4 py-3 text-slate-900">{r.service}</td>
+                <td className="px-4 py-3 text-slate-900">{r.provider}</td>
+                <td className="px-4 py-3 text-slate-900">{r.marginPercent}%</td>
               </tr>
             ))}
           </tbody>

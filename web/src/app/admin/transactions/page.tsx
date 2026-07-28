@@ -38,10 +38,10 @@ export default async function AdminTransactionsPage() {
             {transactions.map((t) => (
               <tr key={t.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{t.reference}</td>
-                <td className="px-4 py-3">{t.user.phone}</td>
-                <td className="px-4 py-3">{t.type}</td>
-                <td className="px-4 py-3">{t.provider}</td>
-                <td className="px-4 py-3">₦{toNaira(t.amountKobo).toLocaleString()}</td>
+                <td className="px-4 py-3 text-slate-900">{t.user.phone}</td>
+                <td className="px-4 py-3 text-slate-900">{t.type}</td>
+                <td className="px-4 py-3 text-slate-900">{t.provider}</td>
+                <td className="px-4 py-3 text-slate-900">₦{toNaira(t.amountKobo).toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[t.status]}`}>
                     {t.status}

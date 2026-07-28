@@ -12,12 +12,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/*
+ * No dark-mode variant here on purpose: the admin dashboard is a fixed
+ * light theme (white cards, slate text, explicit Tailwind color classes
+ * everywhere) with no actual dark styling built for it. Auto-switching
+ * these root variables by OS preference previously caused body text to
+ * go near-white while dashboard cards stayed white-backgrounded —
+ * any element missing an explicit Tailwind text color (a bare <td>,
+ * for instance) became invisible for dark-mode users. Fix the actual
+ * missing color classes instead of re-adding this.
+ */
 
 body {
   background: var(--background);

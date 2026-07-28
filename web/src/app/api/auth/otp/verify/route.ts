@@ -37,6 +37,10 @@ export async function POST(request: Request) {
     include: { wallet: true },
   });
 
+  if (!user.isActive) {
+    return NextResponse.json({ error: "This account has been suspended" }, { status: 403 });
+  }
+
   if (!user.wallet) {
     await prisma.wallet.create({ data: { userId: user.id } });
   }

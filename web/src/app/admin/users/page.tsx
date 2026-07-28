@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import { toNaira } from "@/lib/wallet";
+import { ToggleActiveButton } from "./ToggleActiveButton";
 
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
@@ -19,14 +20,16 @@ export default async function AdminUsersPage() {
             <tr className="border-b border-slate-200 text-left text-slate-500">
               <th className="px-4 py-3 font-medium">Phone</th>
               <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Wallet balance</th>
               <th className="px-4 py-3 font-medium">Joined</th>
+              <th className="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
               <tr key={user.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-3">{user.phone}</td>
+                <td className="px-4 py-3 text-slate-900">{user.phone}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -37,9 +40,25 @@ export default async function AdminUsersPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      user.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {user.isActive ? "Active" : "Suspended"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-slate-900">
                   {user.wallet ? `₦${toNaira(user.wallet.balanceKobo).toLocaleString()}` : "—"}
                 </td>
                 <td className="px-4 py-3 text-slate-500">{user.createdAt.toLocaleDateString()}</td>
+                <td className="px-4 py-3">
+                  {user.role === "ADMIN" ? (
+                    <span className="text-xs text-slate-400">—</span>
+                  ) : (
+                    <ToggleActiveButton userId={user.id} isActive={user.isActive} />
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

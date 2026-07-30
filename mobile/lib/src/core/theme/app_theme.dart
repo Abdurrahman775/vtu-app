@@ -13,7 +13,21 @@ class AppTheme {
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(seedColor: seedColor),
+      appBarTheme: const AppBarTheme(centerTitle: true),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(),
+        filled: true,
+      ),
+    );
+  }
+
+  static ThemeData dark() {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark),
       appBarTheme: const AppBarTheme(centerTitle: true),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),

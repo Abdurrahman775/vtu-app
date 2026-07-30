@@ -7,6 +7,7 @@ import '../../me/me_repository.dart';
 import '../../auth/auth_repository.dart';
 import '../../transactions/screens/transactions_screen.dart';
 import '../../../core/app_info.dart';
+import '../../../core/theme/theme_mode_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -264,6 +265,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     onTap: _showTermsPlaceholder,
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            const _SectionHeader('Appearance'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Theme'),
+                    const SizedBox(height: 12),
+                    SegmentedButton<ThemeMode>(
+                      segments: const [
+                        ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                        ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                        ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+                      ],
+                      selected: {ref.watch(themeModeProvider)},
+                      onSelectionChanged: (selection) =>
+                          ref.read(themeModeProvider.notifier).setThemeMode(selection.first),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 20),

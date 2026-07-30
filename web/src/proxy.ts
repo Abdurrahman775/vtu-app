@@ -3,19 +3,25 @@ import { verifySession } from "@/lib/auth";
 
 /**
  * Next.js 16 renamed `middleware.ts` to `proxy.ts`. Handles two things:
- * - CORS for /api/** so the Flutter mobile app (a different origin —
- *   its own dev server port, or a native app with no browser origin at
- *   all) can call this backend. Restricted to non-credentialed requests
- *   only (mobile sends its JWT as an Authorization header, not a
- *   cookie) — the admin dashboard's cookie-based session never goes
- *   through this path since it's same-origin.
+ * - CORS for /api/** and /uploads/** so the Flutter mobile app (a
+ *   different origin — its own dev server port, or a native app with no
+ *   browser origin at all) can call this backend. /uploads/** (user
+ *   avatars, see docs/PROFILE_MEDIA.md) needs this too even though it's
+ *   static files, not an API route: Flutter web's canvas-based renderer
+ *   treats a cross-origin image with no CORS headers as tainted and
+ *   refuses to draw it, which surfaces as a vague "HTTP request failed,
+ *   statusCode: 0" from NetworkImage with no other explanation.
+ *   Restricted to non-credentialed requests only (mobile sends its JWT
+ *   as an Authorization header, not a cookie) — the admin dashboard's
+ *   cookie-based session never goes through this path since it's
+ *   same-origin.
  * - Guards the admin dashboard pages using the admin_session cookie set
  *   at /admin/login.
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/api")) {
+  if (pathname.startsWith("/api") || pathname.startsWith("/uploads")) {
     if (request.method === "OPTIONS") {
       return new NextResponse(null, { status: 204, headers: corsHeaders() });
     }
@@ -50,5 +56,5 @@ function corsHeaders() {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/:path*"],
+  matcher: ["/admin/:path*", "/api/:path*", "/uploads/:path*"],
 };

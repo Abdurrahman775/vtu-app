@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", exact: true },
@@ -45,10 +46,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Desktop sidebar */}
       <nav className="hidden w-56 shrink-0 flex-col bg-gradient-to-b from-blue-950 to-blue-800 p-6 text-white lg:flex">
-        <h2 className="mb-8 text-lg font-semibold">VTU Admin</h2>
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">VTU Admin</h2>
+          <ThemeToggle />
+        </div>
         <NavLinks pathname={pathname} />
       </nav>
 
@@ -65,17 +69,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
           <button
             onClick={() => setDrawerOpen(true)}
             aria-label="Open menu"
-            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
+            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-slate-900">VTU Admin</span>
+          <span className="flex-1 text-sm font-semibold text-slate-900 dark:text-slate-100">VTU Admin</span>
+          <ThemeToggle />
         </header>
 
         <main className="flex-1 overflow-x-hidden p-4 lg:p-8">{children}</main>

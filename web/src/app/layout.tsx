@@ -27,6 +27,20 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/*
+          Must run before paint to avoid a flash of the wrong theme —
+          can't wait for React hydration. Reads the manual override from
+          localStorage; falls back to the OS-level preference when the
+          user hasn't chosen one. Kept in sync with the toggle logic in
+          admin/layout.tsx's ThemeToggle.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

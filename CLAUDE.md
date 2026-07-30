@@ -161,6 +161,19 @@ credits another inside a single `prisma.$transaction` — it does not
 reuse `postLedgerEntry`/`debitAndPurchase` (which only touch one wallet
 at a time). See `docs/TRANSFER.md`.
 
+### Dark mode uses a class variant, not the Tailwind default
+
+`web/src/app/globals.css` overrides Tailwind's default
+`prefers-color-scheme` dark variant with a class-based one
+(`@custom-variant dark (&:where(.dark, .dark *));`) so the manual toggle
+in `ThemeToggle.tsx` can override the system preference — the default
+media-query variant can't be overridden by JS at all. See
+`docs/DARK_MODE.md`, and note the warning comment in `globals.css`: this
+broke twice before from implicit color inheritance (elements missing an
+explicit `dark:` class going invisible), so there's no shortcut when
+adding new dashboard components — every one needs its own explicit
+light/dark color classes.
+
 ### Data model
 
 Single Prisma schema (`web/prisma/schema.prisma`) shared by both the API

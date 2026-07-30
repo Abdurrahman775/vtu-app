@@ -13,11 +13,11 @@ export default async function AdminReportsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">Transaction Reports</h1>
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+      <h1 className="mb-6 text-xl font-semibold text-slate-900 dark:text-slate-100">Transaction Reports</h1>
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm dark:bg-slate-900">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <th className="px-4 py-3 font-medium">User</th>
               <th className="px-4 py-3 font-medium">Transaction</th>
               <th className="px-4 py-3 font-medium">Amount</th>
@@ -29,20 +29,22 @@ export default async function AdminReportsPage() {
           </thead>
           <tbody>
             {reports.map((r) => (
-              <tr key={r.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-3 text-slate-900">{r.user.phone}</td>
-                <td className="px-4 py-3 text-slate-900">
+              <tr key={r.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.user.phone}</td>
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                   {r.transaction.type} — {r.transaction.provider}
                 </td>
-                <td className="px-4 py-3 text-slate-900">
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                   ₦{toNaira(r.transaction.amountKobo).toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-slate-900">{r.reason}</td>
-                <td className="px-4 py-3 max-w-xs truncate text-slate-700">{r.message ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.reason}</td>
+                <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300">{r.message ?? "—"}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      r.status === "OPEN" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"
+                      r.status === "OPEN"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                        : "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
                     }`}
                   >
                     {r.status}
@@ -55,7 +57,7 @@ export default async function AdminReportsPage() {
             ))}
             {reports.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
                   No reports yet
                 </td>
               </tr>

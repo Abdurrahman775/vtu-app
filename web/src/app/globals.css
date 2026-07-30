@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Class-based dark mode (not the media-query default) so a manual
+ * toggle can override the system preference. `.dark` is applied to
+ * <html> by an inline script in the root layout (checks localStorage,
+ * falls back to prefers-color-scheme) and flipped by the toggle button
+ * in the admin layout header.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -13,16 +22,12 @@
 }
 
 /*
- * No dark-mode variant here on purpose: the admin dashboard is a fixed
- * light theme (white cards, slate text, explicit Tailwind color classes
- * everywhere) with no actual dark styling built for it. Auto-switching
- * these root variables by OS preference previously caused body text to
- * go near-white while dashboard cards stayed white-backgrounded —
- * any element missing an explicit Tailwind text color (a bare <td>,
- * for instance) became invisible for dark-mode users. Fix the actual
- * missing color classes instead of re-adding this.
+ * Every dashboard element must carry its own explicit dark: color
+ * class — see the CLAUDE.md note on the last time this broke via
+ * implicit inheritance (bare <td> cells going near-invisible). Don't
+ * reintroduce a prefers-color-scheme override of --background/--foreground
+ * here; that's exactly the bug that happened before.
  */
-
 body {
   background: var(--background);
   color: var(--foreground);

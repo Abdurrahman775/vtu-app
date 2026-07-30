@@ -44,11 +44,11 @@ export function PricingForm() {
 
   return (
     <div className="mb-8">
-      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900">
         <select
           value={service}
           onChange={(e) => setService(e.target.value as typeof service)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         >
           {SERVICES.map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -58,14 +58,14 @@ export function PricingForm() {
           placeholder="Provider (e.g. MTN)"
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         <input
           type="number"
           placeholder="Margin %"
           value={marginPercent}
           onChange={(e) => setMarginPercent(Number(e.target.value))}
-          className="w-28 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+          className="w-28 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
         />
         <button
           onClick={submit}

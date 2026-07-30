@@ -16,6 +16,9 @@ class Endpoints {
   static const airtimePurchase = '/airtime/purchase';
   static const dataPurchase = '/data/purchase';
   static const cablePurchase = '/cable/purchase';
+  static const examPinPurchase = '/exam-pin/purchase';
+  static const electricityVerifyMeter = '/electricity/verify-meter';
+  static const electricityPurchase = '/electricity/purchase';
 
   static const transactions = '/transactions';
 }

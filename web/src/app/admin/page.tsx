@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { toKobo, toNaira } from "@/lib/wallet";
 import { TransactionType, TransactionStatus } from "@prisma/client";
 
-const PURCHASE_TYPES: TransactionType[] = ["AIRTIME", "DATA", "CABLE_TV"];
+const PURCHASE_TYPES: TransactionType[] = ["AIRTIME", "DATA", "CABLE_TV", "EXAM_PIN", "ELECTRICITY"];
 
 async function getMarginRevenueNaira() {
   const purchases = await prisma.transaction.findMany({

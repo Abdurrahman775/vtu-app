@@ -7,6 +7,8 @@ import '../../wallet/screens/wallet_screen.dart';
 import '../../airtime/screens/airtime_screen.dart';
 import '../../data_bundle/screens/data_screen.dart';
 import '../../cable_tv/screens/cable_screen.dart';
+import '../../exam_pin/screens/exam_pin_screen.dart';
+import '../../electricity/screens/electricity_screen.dart';
 import '../../transactions/screens/transactions_screen.dart';
 import '../../transactions/transactions_repository.dart';
 import '../../transfer/screens/transfer_screen.dart';
@@ -95,6 +97,12 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
                 onCableTv: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const CableScreen()),
+                ),
+                onExamPin: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ExamPinScreen()),
+                ),
+                onElectricity: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ElectricityScreen()),
                 ),
                 onFundWallet: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const WalletScreen()),
@@ -309,6 +317,8 @@ class _QuickServicesGrid extends StatelessWidget {
     required this.onAirtime,
     required this.onData,
     required this.onCableTv,
+    required this.onExamPin,
+    required this.onElectricity,
     required this.onFundWallet,
     required this.onTransfer,
     required this.onComingSoon,
@@ -317,6 +327,8 @@ class _QuickServicesGrid extends StatelessWidget {
   final VoidCallback onAirtime;
   final VoidCallback onData;
   final VoidCallback onCableTv;
+  final VoidCallback onExamPin;
+  final VoidCallback onElectricity;
   final VoidCallback onFundWallet;
   final VoidCallback onTransfer;
   final void Function(String feature) onComingSoon;
@@ -329,8 +341,8 @@ class _QuickServicesGrid extends StatelessWidget {
       _ServiceItem(Icons.phone_iphone, 'Airtime', onAirtime),
       _ServiceItem(Icons.wifi, 'Data', onData),
       _ServiceItem(Icons.live_tv, 'Cable TV', onCableTv),
-      _ServiceItem(Icons.bolt, 'Electricity', () => onComingSoon('Electricity')),
-      _ServiceItem(Icons.school_outlined, 'Education', () => onComingSoon('Education')),
+      _ServiceItem(Icons.bolt, 'Electricity', onElectricity),
+      _ServiceItem(Icons.school_outlined, 'Exam Pin', onExamPin),
       _ServiceItem(Icons.language, 'Internet', () => onComingSoon('Internet')),
       _ServiceItem(Icons.description_outlined, 'Statement', () => onComingSoon('Statement')),
       _ServiceItem(Icons.grid_view, 'More', () => onComingSoon('More services')),

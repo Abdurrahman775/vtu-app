@@ -22,6 +22,8 @@ enum TransactionType {
   AIRTIME
   DATA
   CABLE_TV
+  EXAM_PIN
+  ELECTRICITY
   TRANSFER
 }
 

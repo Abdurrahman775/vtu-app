@@ -61,3 +61,51 @@ export async function purchaseCableSubscription(params: {
   });
   return res.json();
 }
+
+export async function purchaseExamPin(params: {
+  examBody: string;
+  quantity: number;
+  reference: string;
+}): Promise<VtuPurchaseResult> {
+  const { baseUrl, apiKey } = config();
+  const res = await fetch(`${baseUrl}/exam-pin`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export type MeterVerificationResult = {
+  customerName: string;
+  address: string;
+};
+
+export async function verifyMeter(params: {
+  disco: string;
+  meterNumber: string;
+  meterType: "PREPAID" | "POSTPAID";
+}): Promise<MeterVerificationResult> {
+  const { baseUrl, apiKey } = config();
+  const res = await fetch(`${baseUrl}/electricity/verify`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export async function purchaseElectricity(params: {
+  disco: string;
+  meterNumber: string;
+  meterType: "PREPAID" | "POSTPAID";
+  reference: string;
+}): Promise<VtuPurchaseResult> {
+  const { baseUrl, apiKey } = config();
+  const res = await fetch(`${baseUrl}/electricity`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}

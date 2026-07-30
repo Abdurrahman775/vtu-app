@@ -5,10 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 VTU (Virtual Top-Up) reselling app for the Nigerian market — users fund a
-wallet and buy airtime, data bundles, and cable TV subscriptions. See
-`VTU App Proposal.docx` for the full commercial scope (Phase 1 = this
-repo; Phase 2 = electricity/exam pins/referrals; Phase 3 = withdrawal to
-bank account — both future, separately-scoped engagements, not built here).
+wallet and buy airtime, data bundles, cable TV subscriptions, WAEC/NECO
+exam pins, and electricity (prepaid/postpaid). See `VTU App Proposal.docx`
+for the full commercial scope (Phase 1 = airtime/data/cable/wallet; Phase 2
+= electricity/exam pins/referrals — electricity and exam pins are now
+built here, referrals is not yet; Phase 3 = withdrawal to bank account,
+a future, separately-scoped engagement, not built here).
 
 This is a monorepo with two apps sharing one backend contract:
 
@@ -19,7 +21,8 @@ This is a monorepo with two apps sharing one backend contract:
 - `mobile/` — Flutter app (Dart), the end-user client. Calls the same
   `web/` API over HTTP.
 - `docs/` — one markdown file per feature (`AUTH.md`, `WALLET.md`,
-  `AIRTIME.md`, `DATA.md`, `CABLE.md`, `TRANSFER.md`, `ADMIN.md`), each
+  `AIRTIME.md`, `DATA.md`, `CABLE.md`, `EXAM_PIN.md`, `ELECTRICITY.md`,
+  `TRANSFER.md`, `ADMIN.md`), each
   with a design summary and a Status checklist of what's implemented vs.
   still stubbed. Update the relevant doc's Status section whenever you
   finish or start a feature area — that checklist is the source of truth
@@ -141,13 +144,14 @@ arithmetic on money. See `docs/WALLET.md`.
 
 ### Purchases: debit-first with automatic refund on failure
 
-Airtime/data/cable all go through the shared `debitAndPurchase`
-(`web/src/lib/purchase.ts`): create a `PENDING` `Transaction` → debit the
-wallet → call the upstream VTU provider → mark `SUCCESS`/`FAILED`, posting
-a compensating `CREDIT` refund on any failure or thrown error. When
-adding a new purchasable service, reuse this helper rather than
-reimplementing the debit/refund dance. See `docs/AIRTIME.md`,
-`docs/DATA.md`, `docs/CABLE.md`.
+Airtime/data/cable/exam-pin/electricity all go through the shared
+`debitAndPurchase` (`web/src/lib/purchase.ts`): create a `PENDING`
+`Transaction` → debit the wallet → call the upstream VTU provider → mark
+`SUCCESS`/`FAILED`, posting a compensating `CREDIT` refund on any failure
+or thrown error. When adding a new purchasable service, reuse this
+helper rather than reimplementing the debit/refund dance. See
+`docs/AIRTIME.md`, `docs/DATA.md`, `docs/CABLE.md`, `docs/EXAM_PIN.md`,
+`docs/ELECTRICITY.md`.
 
 `web/src/lib/services/vtuProvider.ts` is a stub — the actual VTU reseller
 API (VTpass, Baxi, etc.) is a client decision not yet made, so purchases

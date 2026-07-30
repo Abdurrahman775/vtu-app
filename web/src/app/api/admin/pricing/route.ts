@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 }
 
 const bodySchema = z.object({
-  service: z.enum(["WALLET_FUNDING", "AIRTIME", "DATA", "CABLE_TV"]),
+  service: z.enum(["WALLET_FUNDING", "AIRTIME", "DATA", "CABLE_TV", "EXAM_PIN", "ELECTRICITY"]),
   provider: z.string(),
   marginPercent: z.number().min(0).max(100),
 });

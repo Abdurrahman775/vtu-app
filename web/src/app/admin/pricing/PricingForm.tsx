@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const SERVICES = ["AIRTIME", "DATA", "CABLE_TV"] as const;
+const SERVICES = ["AIRTIME", "DATA", "CABLE_TV", "EXAM_PIN", "ELECTRICITY"] as const;
 
 export function PricingForm() {
   const router = useRouter();

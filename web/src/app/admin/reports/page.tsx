@@ -30,7 +30,7 @@ export default async function AdminReportsPage() {
           <tbody>
             {reports.map((r) => (
               <tr key={r.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.user.phone}</td>
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.user.email}</td>
                 <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                   {r.transaction.type} — {r.transaction.provider}
                 </td>

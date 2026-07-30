@@ -5,6 +5,13 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/endpoints.dart';
 
+/// Carries the backend's actual reason a PIN change was rejected (e.g.
+/// "Current PIN is incorrect") instead of a generic message.
+class PinException implements Exception {
+  const PinException(this.message);
+  final String message;
+}
+
 /// Matches web/src/app/api/me/avatar/route.ts's ALLOWED_TYPES — dio's
 /// MultipartFile.fromBytes defaults to application/octet-stream, which
 /// the backend would reject, so this must be set explicitly.
@@ -19,24 +26,34 @@ MediaType? _mediaTypeForFilename(String filename) {
 class MeUser {
   const MeUser({
     required this.id,
+    required this.email,
     required this.phone,
     this.fullName,
     this.avatarUrl,
     required this.isVerified,
     this.latestVerificationRequestStatus,
+    required this.hasPin,
   });
 
   final String id;
-  final String phone;
+  final String email;
+
+  /// Not collected at login/signup — see docs/AUTH.md. May be null.
+  final String? phone;
   final String? fullName;
   final String? avatarUrl;
   final bool isVerified;
 
+  /// Whether a transaction PIN has been set — see docs/TRANSACTION_PIN.md.
+  /// Purchase/transfer screens should prompt for a PIN before submitting
+  /// only when this is true.
+  final bool hasPin;
+
   /// One of PENDING / APPROVED / REJECTED, or null if never requested.
   final String? latestVerificationRequestStatus;
 
-  /// Falls back to the phone number until the user sets a display name.
-  String get displayName => fullName?.isNotEmpty == true ? fullName! : phone;
+  /// Falls back to email until the user sets a display name.
+  String get displayName => fullName?.isNotEmpty == true ? fullName! : email;
 
   /// Full URL for [avatarUrl] (the API returns a host-relative path).
   String? get avatarFullUrl => avatarUrl == null ? null : '$kApiHostUrl$avatarUrl';
@@ -70,11 +87,13 @@ class Me {
     return Me(
       user: MeUser(
         id: userJson['id'] as String,
-        phone: userJson['phone'] as String,
+        email: userJson['email'] as String,
+        phone: userJson['phone'] as String?,
         fullName: userJson['fullName'] as String?,
         avatarUrl: userJson['avatarUrl'] as String?,
         isVerified: userJson['isVerified'] as bool? ?? false,
         latestVerificationRequestStatus: userJson['latestVerificationRequestStatus'] as String?,
+        hasPin: userJson['hasPin'] as bool? ?? false,
       ),
       wallet: MeWallet(
         balanceNaira: (walletJson['balanceNaira'] as num).toDouble(),
@@ -120,6 +139,35 @@ class MeRepository {
     await _api.dio.post(Endpoints.verificationRequest, data: {
       if (note != null && note.isNotEmpty) 'note': note,
     });
+  }
+
+  /// Sets a transaction PIN for the first time, or changes an existing
+  /// one — `currentPin` is only needed (and checked) if one is already
+  /// set. See docs/TRANSACTION_PIN.md.
+  Future<void> setPin({String? currentPin, required String newPin}) async {
+    try {
+      await _api.dio.post(Endpoints.mePin, data: {
+        if (currentPin != null && currentPin.isNotEmpty) 'currentPin': currentPin,
+        'newPin': newPin,
+      });
+    } on DioException catch (e) {
+      final message = e.response?.data is Map ? e.response?.data['error'] as String? : null;
+      if (message != null) throw PinException(message);
+      rethrow;
+    }
+  }
+
+  /// Recovery path for a forgotten/locked-out PIN — `code` is an OTP
+  /// just requested via `AuthRepository.requestOtp` for the user's own
+  /// email, proving identity strongly enough to skip `currentPin`.
+  Future<void> resetPin({required String code, required String newPin}) async {
+    try {
+      await _api.dio.post(Endpoints.mePinReset, data: {'code': code, 'newPin': newPin});
+    } on DioException catch (e) {
+      final message = e.response?.data is Map ? e.response?.data['error'] as String? : null;
+      if (message != null) throw PinException(message);
+      rethrow;
+    }
   }
 }
 

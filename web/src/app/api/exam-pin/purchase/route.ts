@@ -5,11 +5,13 @@ import { InsufficientBalanceError } from "@/lib/wallet";
 import { debitAndPurchase } from "@/lib/purchase";
 import { priceWithMargin } from "@/lib/pricing";
 import { purchaseExamPin } from "@/lib/services/vtuProvider";
+import { checkTransactionPin, pinCheckErrorMessage } from "@/lib/pin";
 
 const bodySchema = z.object({
   examBody: z.enum(["WAEC", "NECO"]),
   quantity: z.number().int().positive(),
   amountNaira: z.number().positive(),
+  pin: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -19,7 +21,15 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
-    const { examBody, quantity, amountNaira } = parsed.data;
+    const { examBody, quantity, amountNaira, pin } = parsed.data;
+
+    const pinCheck = await checkTransactionPin(session.userId, pin);
+    if (!pinCheck.ok) {
+      return NextResponse.json(
+        { error: pinCheckErrorMessage(pinCheck), code: `PIN_${pinCheck.reason}` },
+        { status: pinCheck.reason === "LOCKED" ? 423 : 401 },
+      );
+    }
 
     const { marginPercent, chargeAmountNaira, chargeAmountKobo } = await priceWithMargin({
       service: "EXAM_PIN",

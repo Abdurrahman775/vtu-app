@@ -4,10 +4,12 @@ import { requireSession, UnauthorizedError } from "@/lib/requireSession";
 import { toKobo } from "@/lib/wallet";
 import { InsufficientBalanceError } from "@/lib/wallet";
 import { transferFunds, RecipientNotFoundError, SelfTransferError } from "@/lib/transfer";
+import { checkTransactionPin, pinCheckErrorMessage } from "@/lib/pin";
 
 const bodySchema = z.object({
   toPhone: z.string().min(10).max(15),
   amountNaira: z.number().positive(),
+  pin: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -17,7 +19,15 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
-    const { toPhone, amountNaira } = parsed.data;
+    const { toPhone, amountNaira, pin } = parsed.data;
+
+    const pinCheck = await checkTransactionPin(session.userId, pin);
+    if (!pinCheck.ok) {
+      return NextResponse.json(
+        { error: pinCheckErrorMessage(pinCheck), code: `PIN_${pinCheck.reason}` },
+        { status: pinCheck.reason === "LOCKED" ? 423 : 401 },
+      );
+    }
 
     const { senderTransaction } = await transferFunds({
       fromUserId: session.userId,

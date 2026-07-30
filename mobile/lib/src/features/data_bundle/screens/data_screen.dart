@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data_repository.dart';
+import '../../../core/widgets/provider_badge.dart';
+import '../../../core/widgets/pin_prompt.dart';
+import '../../me/me_repository.dart';
 
 class DataScreen extends ConsumerStatefulWidget {
   const DataScreen({super.key});
@@ -20,6 +23,13 @@ class _DataScreenState extends ConsumerState<DataScreen> {
     final plan = _plan;
     if (plan == null || _phoneController.text.isEmpty) return;
 
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? pin;
+    if (hasPin) {
+      pin = await promptForTransactionPin(context);
+      if (pin == null || !mounted) return;
+    }
+
     setState(() {
       _loading = true;
       _message = null;
@@ -29,6 +39,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             network: _network,
             phone: _phoneController.text.trim(),
             plan: plan,
+            pin: pin,
           );
       setState(() => _message = 'Data purchase submitted');
     } catch (e) {
@@ -52,7 +63,26 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             DropdownButtonFormField<String>(
               value: _network,
               items: dataPlansByNetwork.keys
-                  .map((n) => DropdownMenuItem(value: n, child: Text(n)))
+                  .map((n) => DropdownMenuItem(
+                        value: n,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderBadge(code: n, size: 24),
+                            const SizedBox(width: 10),
+                            Text(n),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              selectedItemBuilder: (context) => dataPlansByNetwork.keys
+                  .map((n) => Row(
+                        children: [
+                          ProviderBadge(code: n, size: 20),
+                          const SizedBox(width: 8),
+                          Text(n),
+                        ],
+                      ))
                   .toList(),
               onChanged: (v) => setState(() {
                 _network = v ?? _network;

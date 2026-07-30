@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 export async function resetDb() {
+  await prisma.notification.deleteMany();
   await prisma.ledgerEntry.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.otpCode.deleteMany();
@@ -16,6 +17,7 @@ export async function createUserWithWallet(balanceKobo = 0n) {
   const user = await prisma.user.create({
     data: {
       phone: `0800000${String(userCounter).padStart(4, "0")}`,
+      email: `test-user-${userCounter}@example.com`,
       wallet: { create: { balanceKobo } },
     },
     include: { wallet: true },

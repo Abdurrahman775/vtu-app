@@ -33,7 +33,7 @@ export default async function AdminVerificationPage() {
           <tbody>
             {requests.map((r) => (
               <tr key={r.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.user.phone}</td>
+                <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{r.user.email}</td>
                 <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300">{r.note ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{r.createdAt.toLocaleDateString()}</td>
                 <td className="px-4 py-3">

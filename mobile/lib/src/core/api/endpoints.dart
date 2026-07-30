@@ -7,6 +7,8 @@ class Endpoints {
 
   static const me = '/me';
   static const meAvatar = '/me/avatar';
+  static const mePin = '/me/pin';
+  static const mePinReset = '/me/pin/reset';
   static const verificationRequest = '/verification/request';
 
   static const walletBalance = '/wallet/balance';
@@ -21,4 +23,10 @@ class Endpoints {
   static const electricityPurchase = '/electricity/purchase';
 
   static const transactions = '/transactions';
+
+  static const notifications = '/notifications';
+  static String notificationRead(String id) => '/notifications/$id/read';
+  static const notificationsReadAll = '/notifications/read-all';
+
+  static const providerLogos = '/provider-logos';
 }

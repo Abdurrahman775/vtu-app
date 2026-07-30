@@ -34,12 +34,14 @@ class CableRepository {
     required String provider,
     required String smartCardNumber,
     required CablePlan plan,
+    String? pin,
   }) async {
     await _api.dio.post(Endpoints.cablePurchase, data: {
       'provider': provider,
       'smartCardNumber': smartCardNumber,
       'planCode': plan.code,
       'amountNaira': plan.priceNaira,
+      if (pin != null) 'pin': pin,
     });
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../electricity_repository.dart';
+import '../../../core/widgets/provider_badge.dart';
+import '../../../core/widgets/pin_prompt.dart';
+import '../../me/me_repository.dart';
 
 const _meterTypes = ['PREPAID', 'POSTPAID'];
 
@@ -47,6 +50,13 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0 || _verified == null) return;
 
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? pin;
+    if (hasPin) {
+      pin = await promptForTransactionPin(context);
+      if (pin == null || !mounted) return;
+    }
+
     setState(() {
       _purchasing = true;
       _message = null;
@@ -57,6 +67,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
             meterNumber: _meterController.text.trim(),
             meterType: _meterType,
             amountNaira: amount,
+            pin: pin,
           );
       setState(() => _message = 'Electricity purchase submitted');
     } catch (e) {
@@ -77,7 +88,28 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           children: [
             DropdownButtonFormField<String>(
               value: _disco,
-              items: discos.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+              items: discos
+                  .map((d) => DropdownMenuItem(
+                        value: d,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderBadge(code: d, size: 24),
+                            const SizedBox(width: 10),
+                            Text(d),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              selectedItemBuilder: (context) => discos
+                  .map((d) => Row(
+                        children: [
+                          ProviderBadge(code: d, size: 20),
+                          const SizedBox(width: 8),
+                          Text(d),
+                        ],
+                      ))
+                  .toList(),
               onChanged: (v) => setState(() {
                 _disco = v ?? _disco;
                 _verified = null;

@@ -5,11 +5,13 @@ import { InsufficientBalanceError } from "@/lib/wallet";
 import { debitAndPurchase } from "@/lib/purchase";
 import { priceWithMargin } from "@/lib/pricing";
 import { purchaseAirtime } from "@/lib/services/vtuProvider";
+import { checkTransactionPin, pinCheckErrorMessage } from "@/lib/pin";
 
 const bodySchema = z.object({
   network: z.enum(["MTN", "AIRTEL", "GLO", "9MOBILE"]),
   phone: z.string().min(10).max(15),
   amountNaira: z.number().positive(),
+  pin: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -19,7 +21,15 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
-    const { network, phone, amountNaira } = parsed.data;
+    const { network, phone, amountNaira, pin } = parsed.data;
+
+    const pinCheck = await checkTransactionPin(session.userId, pin);
+    if (!pinCheck.ok) {
+      return NextResponse.json(
+        { error: pinCheckErrorMessage(pinCheck), code: `PIN_${pinCheck.reason}` },
+        { status: pinCheck.reason === "LOCKED" ? 423 : 401 },
+      );
+    }
 
     const { marginPercent, chargeAmountNaira, chargeAmountKobo } = await priceWithMargin({
       service: "AIRTIME",

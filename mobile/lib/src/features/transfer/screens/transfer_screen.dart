@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../transfer_repository.dart';
 import '../../me/me_repository.dart';
+import '../../../core/widgets/pin_prompt.dart';
 
 class TransferScreen extends ConsumerStatefulWidget {
   const TransferScreen({super.key});
@@ -22,6 +23,13 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0 || _phoneController.text.isEmpty) return;
 
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? pin;
+    if (hasPin) {
+      pin = await promptForTransactionPin(context);
+      if (pin == null || !mounted) return;
+    }
+
     setState(() {
       _loading = true;
       _message = null;
@@ -30,6 +38,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
       await ref.read(transferRepositoryProvider).transfer(
             toPhone: _phoneController.text.trim(),
             amountNaira: amount,
+            pin: pin,
           );
       setState(() {
         _success = true;

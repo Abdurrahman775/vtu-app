@@ -18,12 +18,14 @@ export async function GET(request: Request) {
     return NextResponse.json({
       user: {
         id: user.id,
+        email: user.email,
         phone: user.phone,
         fullName: user.fullName,
         role: user.role,
         avatarUrl: user.avatarUrl,
         isVerified: user.isVerified,
         latestVerificationRequestStatus: user.verificationRequests[0]?.status ?? null,
+        hasPin: user.pinHash !== null,
       },
       wallet: user.wallet && {
         balanceNaira: toNaira(user.wallet.balanceKobo),
@@ -58,7 +60,9 @@ export async function PATCH(request: Request) {
       data: { fullName: parsed.data.fullName },
     });
 
-    return NextResponse.json({ user: { id: user.id, phone: user.phone, fullName: user.fullName, role: user.role } });
+    return NextResponse.json({
+      user: { id: user.id, email: user.email, phone: user.phone, fullName: user.fullName, role: user.role },
+    });
   } catch (err) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

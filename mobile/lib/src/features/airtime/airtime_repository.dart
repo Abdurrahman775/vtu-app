@@ -11,11 +11,13 @@ class AirtimeRepository {
     required String network,
     required String phone,
     required double amountNaira,
+    String? pin,
   }) async {
     await _api.dio.post(Endpoints.airtimePurchase, data: {
       'network': network,
       'phone': phone,
       'amountNaira': amountNaira,
+      if (pin != null) 'pin': pin,
     });
   }
 }

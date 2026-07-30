@@ -86,6 +86,19 @@ class TransactionsRepository {
     return TransactionDetail.fromJson(response.data['transaction'] as Map<String, dynamic>);
   }
 
+  /// Used for the account statement — the backend rejects [from] values
+  /// more than 3 months back (see `web/src/app/api/transactions/route.ts`).
+  Future<List<TransactionSummary>> listByRange({required DateTime from, required DateTime to}) async {
+    final response = await _api.dio.get(Endpoints.transactions, queryParameters: {
+      'from': from.toUtc().toIso8601String(),
+      'to': to.toUtc().toIso8601String(),
+    });
+    final items = response.data['transactions'] as List;
+    return items
+        .map((item) => TransactionSummary.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<void> reportProblem(String id, {required String reason, String? message}) async {
     await _api.dio.post('${Endpoints.transactions}/$id/report', data: {
       'reason': reason,

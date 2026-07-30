@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, UnauthorizedError } from "@/lib/requireSession";
-import { postLedgerEntry } from "@/lib/wallet";
+import { postLedgerEntry, toNaira } from "@/lib/wallet";
+import { createNotification } from "@/lib/notifications";
 import { LedgerEntryType } from "@prisma/client";
 
 const bodySchema = z.object({
@@ -51,6 +52,23 @@ export async function POST(request: Request, { params }: RouteContext) {
       where: { id },
       data: { status: parsed.data.resolution },
     });
+
+    try {
+      const label = updated.type.replace(/_/g, " ").toLowerCase();
+      const amountNaira = toNaira(updated.amountKobo).toLocaleString();
+      await createNotification({
+        userId: updated.userId,
+        type: "TRANSACTION",
+        title: parsed.data.resolution === "SUCCESS" ? "Transaction confirmed" : "Transaction failed",
+        body:
+          parsed.data.resolution === "SUCCESS"
+            ? `Your ${label} of ₦${amountNaira} was confirmed.`
+            : `Your ${label} of ₦${amountNaira} failed${updated.type !== "WALLET_FUNDING" ? " and has been refunded" : ""}.`,
+        meta: { transactionId: updated.id },
+      });
+    } catch {
+      // best-effort — resolution already applied, don't fail the request over this
+    }
 
     return NextResponse.json({ transaction: updated });
   } catch (err) {

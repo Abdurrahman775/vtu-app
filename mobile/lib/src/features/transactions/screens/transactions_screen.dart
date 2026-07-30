@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../transactions_repository.dart';
 import 'transaction_detail_screen.dart';
+import '../../../core/widgets/provider_badge.dart';
 
 class TransactionsScreen extends ConsumerWidget {
   const TransactionsScreen({super.key});
@@ -26,6 +27,7 @@ class TransactionsScreen extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final t = items[index];
                     return ListTile(
+                      leading: ProviderBadge(code: t.provider, size: 36),
                       title: Text('${t.type} — ${t.provider}'),
                       subtitle: Text(dateFormat.format(t.createdAt)),
                       trailing: Column(

@@ -22,7 +22,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: OtpScreen.routePath,
-      builder: (context, state) => OtpScreen(phone: state.extra as String),
+      builder: (context, state) => OtpScreen(email: state.extra as String),
     ),
     GoRoute(path: HomeScreen.routePath, builder: (context, state) => const HomeScreen()),
   ],

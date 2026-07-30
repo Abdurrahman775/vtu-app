@@ -37,12 +37,14 @@ class DataRepository {
     required String network,
     required String phone,
     required DataPlan plan,
+    String? pin,
   }) async {
     await _api.dio.post(Endpoints.dataPurchase, data: {
       'network': network,
       'phone': phone,
       'planCode': plan.code,
       'amountNaira': plan.priceNaira,
+      if (pin != null) 'pin': pin,
     });
   }
 }

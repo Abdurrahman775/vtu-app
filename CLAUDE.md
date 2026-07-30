@@ -22,7 +22,8 @@ This is a monorepo with two apps sharing one backend contract:
   `web/` API over HTTP.
 - `docs/` — one markdown file per feature (`AUTH.md`, `WALLET.md`,
   `AIRTIME.md`, `DATA.md`, `CABLE.md`, `EXAM_PIN.md`, `ELECTRICITY.md`,
-  `TRANSFER.md`, `ADMIN.md`), each
+  `TRANSFER.md`, `NOTIFICATIONS.md`, `RECEIPTS.md`, `STATEMENT.md`,
+  `PROVIDER_LOGOS.md`, `TRANSACTION_PIN.md`, `ADMIN.md`), each
   with a design summary and a Status checklist of what's implemented vs.
   still stubbed. Update the relevant doc's Status section whenever you
   finish or start a feature area — that checklist is the source of truth
@@ -122,13 +123,17 @@ headers, or that `/admin/transactions` 307-redirects to `/admin/login`
 when unauthenticated) after touching `proxy.ts`, don't just trust that
 it typechecks.
 
-### Auth: phone + OTP only, two token delivery mechanisms
+### Auth: email + OTP only, two token delivery mechanisms
 
-No passwords in Phase 1. `POST /api/auth/otp/request` → `POST
-/api/auth/otp/verify` issues a JWT (`web/src/lib/auth.ts`). The mobile
-app carries it as a Bearer header; the admin dashboard instead gets it as
-an httpOnly `admin_session` cookie (set by `POST /api/admin/login`, which
-requires `User.role === "ADMIN"`). `requireSession`/`requireAdmin`
+No passwords, no phone number — email is the only login identifier (OTP
+is sent via Gmail SMTP, `web/src/lib/otp.ts`). `User.phone` still exists
+in the schema (nullable) only because wallet-to-wallet transfers look up
+a recipient by phone (`docs/TRANSFER.md`); it's never asked for at
+signup. `POST /api/auth/otp/request` → `POST /api/auth/otp/verify` issues a JWT
+(`web/src/lib/auth.ts`). The mobile app carries it as a Bearer header;
+the admin dashboard instead gets it as an httpOnly `admin_session`
+cookie (set by `POST /api/admin/login`, which requires `User.role ===
+"ADMIN"`). `requireSession`/`requireAdmin`
 (`web/src/lib/requireSession.ts`) accept either transport, so route
 handlers don't need to care which client is calling. See `docs/AUTH.md`.
 
@@ -158,12 +163,28 @@ API (VTpass, Baxi, etc.) is a client decision not yet made, so purchases
 will fail against real traffic until `VTU_PROVIDER_BASE_URL`/`_API_KEY`
 point at a real provider.
 
+Every transfer/purchase route also checks an optional transaction PIN
+(`checkTransactionPin()`, `web/src/lib/pin.ts`) before doing anything
+else — a no-op if the account hasn't set one yet (not collected at
+signup), otherwise required and verified via bcrypt. See
+`docs/TRANSACTION_PIN.md`.
+
 ### Wallet-to-wallet transfer is a different code path than purchases
 
 `web/src/lib/transfer.ts`'s `transferFunds` debits one wallet and
 credits another inside a single `prisma.$transaction` — it does not
 reuse `postLedgerEntry`/`debitAndPurchase` (which only touch one wallet
 at a time). See `docs/TRANSFER.md`.
+
+### Notifications are in-app only, not push
+
+`createNotification()` (`web/src/lib/notifications.ts`) is called
+best-effort (wrapped in try/catch, never allowed to fail the underlying
+request) from `debitAndPurchase`, the wallet funding webhook,
+`transferFunds`, and the admin manual-resolve route. The mobile app
+polls `GET /api/notifications` rather than receiving anything pushed —
+there's no FCM/APNs wiring or plugin installed. See
+`docs/NOTIFICATIONS.md`.
 
 ### Dark mode uses a class variant, not the Tailwind default
 

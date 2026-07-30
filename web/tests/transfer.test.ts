@@ -12,7 +12,7 @@ describe("transferFunds", () => {
     const sender = await createUserWithWallet(100000n);
     const recipient = await createUserWithWallet(0n);
 
-    await transferFunds({ fromUserId: sender.id, toPhone: recipient.phone, amountKobo: 30000n });
+    await transferFunds({ fromUserId: sender.id, toPhone: recipient.phone!, amountKobo: 30000n });
 
     const senderWallet = await prisma.wallet.findUniqueOrThrow({ where: { userId: sender.id } });
     const recipientWallet = await prisma.wallet.findUniqueOrThrow({ where: { userId: recipient.id } });
@@ -25,7 +25,7 @@ describe("transferFunds", () => {
     const sender = await createUserWithWallet(100000n);
     const recipient = await createUserWithWallet(0n);
 
-    await transferFunds({ fromUserId: sender.id, toPhone: recipient.phone, amountKobo: 30000n });
+    await transferFunds({ fromUserId: sender.id, toPhone: recipient.phone!, amountKobo: 30000n });
 
     const senderTx = await prisma.transaction.findFirstOrThrow({ where: { userId: sender.id } });
     const recipientTx = await prisma.transaction.findFirstOrThrow({ where: { userId: recipient.id } });
@@ -40,7 +40,7 @@ describe("transferFunds", () => {
     const user = await createUserWithWallet(100000n);
 
     await expect(
-      transferFunds({ fromUserId: user.id, toPhone: user.phone, amountKobo: 1000n }),
+      transferFunds({ fromUserId: user.id, toPhone: user.phone!, amountKobo: 1000n }),
     ).rejects.toThrow(SelfTransferError);
   });
 
@@ -57,7 +57,7 @@ describe("transferFunds", () => {
     const recipient = await createUserWithWallet(0n);
 
     await expect(
-      transferFunds({ fromUserId: sender.id, toPhone: recipient.phone, amountKobo: 5000n }),
+      transferFunds({ fromUserId: sender.id, toPhone: recipient.phone!, amountKobo: 5000n }),
     ).rejects.toThrow(InsufficientBalanceError);
 
     const senderWallet = await prisma.wallet.findUniqueOrThrow({ where: { userId: sender.id } });

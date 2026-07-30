@@ -9,6 +9,9 @@ import '../../data_bundle/screens/data_screen.dart';
 import '../../cable_tv/screens/cable_screen.dart';
 import '../../exam_pin/screens/exam_pin_screen.dart';
 import '../../electricity/screens/electricity_screen.dart';
+import '../../notifications/notifications_repository.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../statement/screens/statement_screen.dart';
 import '../../transactions/screens/transactions_screen.dart';
 import '../../transactions/transactions_repository.dart';
 import '../../transfer/screens/transfer_screen.dart';
@@ -41,6 +44,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   Widget build(BuildContext context) {
     final me = ref.watch(meProvider);
     final transactions = ref.watch(transactionsProvider);
+    final notifications = ref.watch(notificationsProvider);
+    final unreadCount = notifications.maybeWhen(data: (page) => page.unreadCount, orElse: () => 0);
 
     return Scaffold(
       body: SafeArea(
@@ -48,6 +53,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           onRefresh: () async {
             ref.invalidate(meProvider);
             ref.invalidate(transactionsProvider);
+            ref.invalidate(notificationsProvider);
           },
           child: ListView(
             padding: const EdgeInsets.all(16),
@@ -56,7 +62,13 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 displayName: me.maybeWhen(data: (m) => m.user.displayName, orElse: () => ''),
                 avatarUrl: me.maybeWhen(data: (m) => m.user.avatarFullUrl, orElse: () => null),
                 greeting: _greeting(),
-                onBellTap: () => _comingSoon('Notifications'),
+                unreadNotifications: unreadCount,
+                onBellTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                  );
+                  ref.invalidate(notificationsProvider);
+                },
                 onMenuTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 ),
@@ -75,6 +87,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   onHistory: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const TransactionsScreen()),
                   ),
+                  onRefreshBalance: () async {
+                    final refreshed = ref.refresh(meProvider.future);
+                    await refreshed;
+                  },
                 ),
                 loading: () => const SizedBox(
                   height: 180,
@@ -109,6 +125,9 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
                 onTransfer: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const TransferScreen()),
+                ),
+                onStatement: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const StatementScreen()),
                 ),
                 onComingSoon: _comingSoon,
               ),
@@ -160,6 +179,7 @@ class _Header extends StatelessWidget {
     required this.displayName,
     required this.avatarUrl,
     required this.greeting,
+    required this.unreadNotifications,
     required this.onBellTap,
     required this.onMenuTap,
   });
@@ -167,6 +187,7 @@ class _Header extends StatelessWidget {
   final String displayName;
   final String? avatarUrl;
   final String greeting;
+  final int unreadNotifications;
   final VoidCallback onBellTap;
   final VoidCallback onMenuTap;
 
@@ -193,14 +214,21 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(icon: const Icon(Icons.notifications_none), onPressed: onBellTap),
+        IconButton(
+          icon: Badge(
+            isLabelVisible: unreadNotifications > 0,
+            label: Text('$unreadNotifications'),
+            child: const Icon(Icons.notifications_none),
+          ),
+          onPressed: onBellTap,
+        ),
         IconButton(icon: const Icon(Icons.menu), onPressed: onMenuTap),
       ],
     );
   }
 }
 
-class _WalletCard extends StatelessWidget {
+class _WalletCard extends StatefulWidget {
   const _WalletCard({
     required this.balanceNaira,
     required this.virtualAccountNumber,
@@ -209,6 +237,7 @@ class _WalletCard extends StatelessWidget {
     required this.onToggleHidden,
     required this.onAddMoney,
     required this.onHistory,
+    required this.onRefreshBalance,
   });
 
   final double balanceNaira;
@@ -218,10 +247,29 @@ class _WalletCard extends StatelessWidget {
   final VoidCallback onToggleHidden;
   final VoidCallback onAddMoney;
   final VoidCallback onHistory;
+  final Future<void> Function() onRefreshBalance;
+
+  @override
+  State<_WalletCard> createState() => _WalletCardState();
+}
+
+class _WalletCardState extends State<_WalletCard> {
+  bool _refreshing = false;
+
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await widget.onRefreshBalance();
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final balanceText = hidden ? '₦ • • • • • •' : '₦${balanceNaira.toStringAsFixed(2)}';
+    final balanceText =
+        widget.hidden ? '₦ • • • • • •' : '₦${widget.balanceNaira.toStringAsFixed(2)}';
 
     return Container(
       width: double.infinity,
@@ -238,15 +286,44 @@ class _WalletCard extends StatelessWidget {
               const Text('Wallet Balance', style: TextStyle(color: Colors.white70)),
               const SizedBox(width: 6),
               InkWell(
-                onTap: onToggleHidden,
-                child: Icon(hidden ? Icons.visibility_off : Icons.visibility,
+                onTap: widget.onToggleHidden,
+                child: Icon(widget.hidden ? Icons.visibility_off : Icons.visibility,
                     color: Colors.white70, size: 18),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: _refresh,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _refreshing
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                        )
+                      : const Icon(Icons.refresh, color: Colors.white70, size: 18),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(balanceText,
-              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+          ClipRect(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, animation) => SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(animation),
+                child: child,
+              ),
+              child: Text(
+                balanceText,
+                key: ValueKey(balanceText),
+                style:
+                    const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -260,18 +337,18 @@ class _WalletCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (virtualAccountNumber != null)
+          if (widget.virtualAccountNumber != null)
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    '$virtualAccountNumber${virtualAccountName != null ? ' | $virtualAccountName' : ''}',
+                    '${widget.virtualAccountNumber}${widget.virtualAccountName != null ? ' | ${widget.virtualAccountName}' : ''}',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 InkWell(
-                  onTap: () => Clipboard.setData(ClipboardData(text: virtualAccountNumber!)),
+                  onTap: () => Clipboard.setData(ClipboardData(text: widget.virtualAccountNumber!)),
                   child: const Icon(Icons.copy, color: Colors.white70, size: 16),
                 ),
               ],
@@ -287,7 +364,7 @@ class _WalletCard extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppTheme.seedColor),
-                  onPressed: onAddMoney,
+                  onPressed: widget.onAddMoney,
                   icon: const Icon(Icons.add),
                   label: const Text('Add Money'),
                 ),
@@ -299,7 +376,7 @@ class _WalletCard extends StatelessWidget {
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white54),
                   ),
-                  onPressed: onHistory,
+                  onPressed: widget.onHistory,
                   icon: const Icon(Icons.history),
                   label: const Text('History'),
                 ),
@@ -321,6 +398,7 @@ class _QuickServicesGrid extends StatelessWidget {
     required this.onElectricity,
     required this.onFundWallet,
     required this.onTransfer,
+    required this.onStatement,
     required this.onComingSoon,
   });
 
@@ -331,6 +409,7 @@ class _QuickServicesGrid extends StatelessWidget {
   final VoidCallback onElectricity;
   final VoidCallback onFundWallet;
   final VoidCallback onTransfer;
+  final VoidCallback onStatement;
   final void Function(String feature) onComingSoon;
 
   @override
@@ -344,7 +423,7 @@ class _QuickServicesGrid extends StatelessWidget {
       _ServiceItem(Icons.bolt, 'Electricity', onElectricity),
       _ServiceItem(Icons.school_outlined, 'Exam Pin', onExamPin),
       _ServiceItem(Icons.language, 'Internet', () => onComingSoon('Internet')),
-      _ServiceItem(Icons.description_outlined, 'Statement', () => onComingSoon('Statement')),
+      _ServiceItem(Icons.description_outlined, 'Statement', onStatement),
       _ServiceItem(Icons.grid_view, 'More', () => onComingSoon('More services')),
     ];
 

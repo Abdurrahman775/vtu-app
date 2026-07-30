@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../cable_repository.dart';
+import '../../../core/widgets/provider_badge.dart';
+import '../../../core/widgets/pin_prompt.dart';
+import '../../me/me_repository.dart';
 
 class CableScreen extends ConsumerStatefulWidget {
   const CableScreen({super.key});
@@ -20,6 +23,13 @@ class _CableScreenState extends ConsumerState<CableScreen> {
     final plan = _plan;
     if (plan == null || _smartCardController.text.isEmpty) return;
 
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? pin;
+    if (hasPin) {
+      pin = await promptForTransactionPin(context);
+      if (pin == null || !mounted) return;
+    }
+
     setState(() {
       _loading = true;
       _message = null;
@@ -29,6 +39,7 @@ class _CableScreenState extends ConsumerState<CableScreen> {
             provider: _provider,
             smartCardNumber: _smartCardController.text.trim(),
             plan: plan,
+            pin: pin,
           );
       setState(() => _message = 'Cable subscription submitted');
     } catch (e) {
@@ -52,7 +63,26 @@ class _CableScreenState extends ConsumerState<CableScreen> {
             DropdownButtonFormField<String>(
               value: _provider,
               items: cablePlansByProvider.keys
-                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  .map((p) => DropdownMenuItem(
+                        value: p,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderBadge(code: p, size: 24),
+                            const SizedBox(width: 10),
+                            Text(p),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              selectedItemBuilder: (context) => cablePlansByProvider.keys
+                  .map((p) => Row(
+                        children: [
+                          ProviderBadge(code: p, size: 20),
+                          const SizedBox(width: 8),
+                          Text(p),
+                        ],
+                      ))
                   .toList(),
               onChanged: (v) => setState(() {
                 _provider = v ?? _provider;

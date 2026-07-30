@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { LedgerEntryType, TransactionType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { postLedgerEntry, InsufficientBalanceError } from "@/lib/wallet";
+import { postLedgerEntry, InsufficientBalanceError, toNaira } from "@/lib/wallet";
+import { createNotification } from "@/lib/notifications";
 import type { VtuPurchaseResult } from "@/lib/services/vtuProvider";
 
 export { InsufficientBalanceError };
@@ -56,6 +57,8 @@ export async function debitAndPurchase(params: {
       });
     }
 
+    await notifyPurchaseResult({ userId, type, provider, amountKobo, success: result.success });
+
     return { transaction, result };
   } catch (err) {
     transaction = await prisma.transaction.update({
@@ -69,6 +72,32 @@ export async function debitAndPurchase(params: {
       reference: `refund_${reference}`,
       description: `Refund for failed ${type} purchase`,
     });
+    await notifyPurchaseResult({ userId, type, provider, amountKobo, success: false });
     throw err;
+  }
+}
+
+/** Notification failures must never break the debit/refund flow above. */
+async function notifyPurchaseResult(params: {
+  userId: string;
+  type: TransactionType;
+  provider: string;
+  amountKobo: bigint;
+  success: boolean;
+}) {
+  const { userId, type, provider, amountKobo, success } = params;
+  const label = type.replace(/_/g, " ").toLowerCase();
+  try {
+    await createNotification({
+      userId,
+      type: "TRANSACTION",
+      title: success ? "Purchase successful" : "Purchase failed",
+      body: success
+        ? `Your ${label} purchase of ₦${toNaira(amountKobo).toLocaleString()} via ${provider} was successful.`
+        : `Your ${label} purchase of ₦${toNaira(amountKobo).toLocaleString()} via ${provider} failed and has been refunded.`,
+      meta: { transactionType: type, provider, amountKobo: amountKobo.toString() },
+    });
+  } catch {
+    // best-effort — purchase already succeeded/refunded, don't fail the request over this
   }
 }

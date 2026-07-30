@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../exam_pin_repository.dart';
+import '../../../core/widgets/provider_badge.dart';
+import '../../../core/widgets/pin_prompt.dart';
+import '../../me/me_repository.dart';
 
 class ExamPinScreen extends ConsumerStatefulWidget {
   const ExamPinScreen({super.key});
@@ -16,6 +19,13 @@ class _ExamPinScreenState extends ConsumerState<ExamPinScreen> {
   String? _message;
 
   Future<void> _submit() async {
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? transactionPin;
+    if (hasPin) {
+      transactionPin = await promptForTransactionPin(context);
+      if (transactionPin == null || !mounted) return;
+    }
+
     setState(() {
       _loading = true;
       _message = null;
@@ -24,6 +34,7 @@ class _ExamPinScreenState extends ConsumerState<ExamPinScreen> {
       await ref.read(examPinRepositoryProvider).purchase(
             examBody: _examBody,
             quantity: _quantity,
+            pin: transactionPin,
           );
       setState(() => _message = 'Exam pin purchase submitted');
     } catch (e) {
@@ -48,7 +59,26 @@ class _ExamPinScreenState extends ConsumerState<ExamPinScreen> {
             DropdownButtonFormField<String>(
               value: _examBody,
               items: examPinPricesByBody.keys
-                  .map((body) => DropdownMenuItem(value: body, child: Text(body)))
+                  .map((body) => DropdownMenuItem(
+                        value: body,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderBadge(code: body, size: 24),
+                            const SizedBox(width: 10),
+                            Text(body),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              selectedItemBuilder: (context) => examPinPricesByBody.keys
+                  .map((body) => Row(
+                        children: [
+                          ProviderBadge(code: body, size: 20),
+                          const SizedBox(width: 8),
+                          Text(body),
+                        ],
+                      ))
                   .toList(),
               onChanged: (v) => setState(() => _examBody = v ?? _examBody),
               decoration: const InputDecoration(labelText: 'Exam body'),

@@ -5,12 +5,14 @@ import { InsufficientBalanceError } from "@/lib/wallet";
 import { debitAndPurchase } from "@/lib/purchase";
 import { priceWithMargin } from "@/lib/pricing";
 import { purchaseCableSubscription } from "@/lib/services/vtuProvider";
+import { checkTransactionPin, pinCheckErrorMessage } from "@/lib/pin";
 
 const bodySchema = z.object({
   provider: z.enum(["DSTV", "GOTV", "STARTIMES"]),
   smartCardNumber: z.string().min(5),
   planCode: z.string(),
   amountNaira: z.number().positive(),
+  pin: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,7 +22,15 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
-    const { provider, smartCardNumber, planCode, amountNaira } = parsed.data;
+    const { provider, smartCardNumber, planCode, amountNaira, pin } = parsed.data;
+
+    const pinCheck = await checkTransactionPin(session.userId, pin);
+    if (!pinCheck.ok) {
+      return NextResponse.json(
+        { error: pinCheckErrorMessage(pinCheck), code: `PIN_${pinCheck.reason}` },
+        { status: pinCheck.reason === "LOCKED" ? 423 : 401 },
+      );
+    }
 
     const { marginPercent, chargeAmountNaira, chargeAmountKobo } = await priceWithMargin({
       service: "CABLE_TV",

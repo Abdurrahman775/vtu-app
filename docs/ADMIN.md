@@ -20,8 +20,9 @@ authenticated shell.
 - `/admin/users` — user list with phone, role, and current wallet
   balance.
 - `/admin/pricing` — `PricingRule` margin-percent per (service, provider)
-  pair, via `PUT /api/admin/pricing`. Not yet consumed by the purchase
-  routes (see Status).
+  pair, via `PUT /api/admin/pricing`, applied by every purchase route
+  (see Status). Covers `AIRTIME`, `DATA`, `CABLE_TV`, `EXAM_PIN`, and
+  `ELECTRICITY` (`PricingForm.tsx`'s `SERVICES` list).
 
 ## Status
 
@@ -33,8 +34,14 @@ authenticated shell.
       at the project root, so the admin pages had **no real auth
       protection** despite the code looking correct. If you're auditing
       security on this app, re-verify this redirect still works.
-- [x] Manual transaction resolution with correct ledger side-effects
+- [x] Manual transaction resolution with correct ledger side-effects,
+      plus a notification to the affected user — see `docs/NOTIFICATIONS.md`
 - [x] Purchase routes apply `PricingRule.marginPercent` — see
       `web/src/lib/pricing.ts` and `docs/AIRTIME.md`
-- [ ] Dispute-resolution workflow, analytics (Phase 2, per proposal
-      Section 5)
+- [x] Pricing form, pricing API, and dashboard margin-revenue analytics
+      (`admin/page.tsx`'s `PURCHASE_TYPES`) cover `EXAM_PIN` and
+      `ELECTRICITY` alongside the original three services — see
+      `docs/EXAM_PIN.md`, `docs/ELECTRICITY.md`
+- [ ] Dispute-resolution workflow (Phase 2, per proposal Section 5)
+- [ ] Referrals (Phase 2, per proposal Section 5) — not yet built, no
+      admin surface for it either

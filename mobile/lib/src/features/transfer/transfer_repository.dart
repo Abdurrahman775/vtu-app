@@ -7,10 +7,11 @@ class TransferRepository {
 
   final ApiClient _api;
 
-  Future<void> transfer({required String toPhone, required double amountNaira}) async {
+  Future<void> transfer({required String toPhone, required double amountNaira, String? pin}) async {
     await _api.dio.post(Endpoints.walletTransfer, data: {
       'toPhone': toPhone,
       'amountNaira': amountNaira,
+      if (pin != null) 'pin': pin,
     });
   }
 }

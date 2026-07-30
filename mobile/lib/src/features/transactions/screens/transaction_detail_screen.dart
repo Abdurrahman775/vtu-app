@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import '../transactions_repository.dart';
-import '../../../core/receipt_downloader.dart';
+import '../../../core/pdf/pdf_builder.dart';
+import '../../../core/widgets/provider_badge.dart';
 
 const _reportReasons = [
   'Airtime/data not received',
@@ -13,26 +14,31 @@ const _reportReasons = [
   'Other',
 ];
 
-class TransactionDetailScreen extends ConsumerWidget {
+class TransactionDetailScreen extends ConsumerStatefulWidget {
   const TransactionDetailScreen({super.key, required this.transactionId});
 
   final String transactionId;
 
-  String _buildReceiptText(TransactionDetail t) {
-    final dateFormat = DateFormat('MMM d, y • h:mm a');
-    final buffer = StringBuffer()
-      ..writeln('VTU App Receipt')
-      ..writeln('========================')
-      ..writeln('Reference: ${t.reference}')
-      ..writeln('Type: ${t.type}')
-      ..writeln('Provider: ${t.provider}')
-      ..writeln('Amount: ₦${t.amountNaira.toStringAsFixed(2)}')
-      ..writeln('Status: ${t.status}')
-      ..writeln('Date: ${dateFormat.format(t.createdAt)}');
-    if (t.providerReference != null) {
-      buffer.writeln('Provider reference: ${t.providerReference}');
+  @override
+  ConsumerState<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
+}
+
+class _TransactionDetailScreenState extends ConsumerState<TransactionDetailScreen> {
+  bool _generatingReceipt = false;
+
+  Future<void> _downloadReceipt(TransactionDetail t) async {
+    setState(() => _generatingReceipt = true);
+    try {
+      final bytes = await buildReceiptPdf(t);
+      await Printing.sharePdf(bytes: bytes, filename: 'receipt_${t.reference}.pdf');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Could not generate receipt. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _generatingReceipt = false);
     }
-    return buffer.toString();
   }
 
   Future<void> _reportProblem(BuildContext context, WidgetRef ref) async {
@@ -79,7 +85,7 @@ class TransactionDetailScreen extends ConsumerWidget {
 
     try {
       await ref.read(transactionsRepositoryProvider).reportProblem(
-            transactionId,
+            widget.transactionId,
             reason: selectedReason,
             message: messageController.text.trim(),
           );
@@ -97,8 +103,8 @@ class TransactionDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detail = ref.watch(transactionDetailProvider(transactionId));
+  Widget build(BuildContext context) {
+    final detail = ref.watch(transactionDetailProvider(widget.transactionId));
     final dateFormat = DateFormat('MMM d, y • h:mm a');
 
     return Scaffold(
@@ -113,8 +119,16 @@ class TransactionDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${t.type} — ${t.provider}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                    Row(
+                      children: [
+                        ProviderBadge(code: t.provider, size: 40),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text('${t.type} — ${t.provider}',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     Text(dateFormat.format(t.createdAt), style: TextStyle(color: Colors.grey.shade600)),
                     const Divider(height: 32),
@@ -132,28 +146,16 @@ class TransactionDetailScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Share.share(_buildReceiptText(t)),
-                    icon: const Icon(Icons.share_outlined),
-                    label: const Text('Share'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      downloadReceiptAsFile('receipt_${t.reference}.txt', _buildReceiptText(t));
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(const SnackBar(content: Text('Receipt downloaded')));
-                    },
-                    icon: const Icon(Icons.download_outlined),
-                    label: const Text('Save'),
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _generatingReceipt ? null : () => _downloadReceipt(t),
+                icon: _generatingReceipt
+                    ? const SizedBox(
+                        height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(_generatingReceipt ? 'Generating…' : 'Download Receipt'),
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(

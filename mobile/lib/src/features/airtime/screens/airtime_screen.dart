@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../airtime_repository.dart';
+import '../../../core/widgets/provider_badge.dart';
+import '../../../core/widgets/pin_prompt.dart';
+import '../../me/me_repository.dart';
 
 const _networks = ['MTN', 'AIRTEL', 'GLO', '9MOBILE'];
 
@@ -22,6 +25,13 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0 || _phoneController.text.isEmpty) return;
 
+    final hasPin = ref.read(meProvider).value?.user.hasPin ?? false;
+    String? pin;
+    if (hasPin) {
+      pin = await promptForTransactionPin(context);
+      if (pin == null || !mounted) return;
+    }
+
     setState(() {
       _loading = true;
       _message = null;
@@ -31,6 +41,7 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
             network: _network,
             phone: _phoneController.text.trim(),
             amountNaira: amount,
+            pin: pin,
           );
       setState(() => _message = 'Airtime purchase submitted');
     } catch (e) {
@@ -51,7 +62,28 @@ class _AirtimeScreenState extends ConsumerState<AirtimeScreen> {
           children: [
             DropdownButtonFormField<String>(
               value: _network,
-              items: _networks.map((n) => DropdownMenuItem(value: n, child: Text(n))).toList(),
+              items: _networks
+                  .map((n) => DropdownMenuItem(
+                        value: n,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderBadge(code: n, size: 24),
+                            const SizedBox(width: 10),
+                            Text(n),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              selectedItemBuilder: (context) => _networks
+                  .map((n) => Row(
+                        children: [
+                          ProviderBadge(code: n, size: 20),
+                          const SizedBox(width: 8),
+                          Text(n),
+                        ],
+                      ))
+                  .toList(),
               onChanged: (v) => setState(() => _network = v ?? _network),
               decoration: const InputDecoration(labelText: 'Network'),
             ),

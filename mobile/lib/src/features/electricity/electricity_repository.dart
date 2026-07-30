@@ -50,12 +50,14 @@ class ElectricityRepository {
     required String meterNumber,
     required String meterType,
     required double amountNaira,
+    String? pin,
   }) async {
     await _api.dio.post(Endpoints.electricityPurchase, data: {
       'disco': disco,
       'meterNumber': meterNumber,
       'meterType': meterType,
       'amountNaira': amountNaira,
+      if (pin != null) 'pin': pin,
     });
   }
 }

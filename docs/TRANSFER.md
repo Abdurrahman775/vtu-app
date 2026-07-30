@@ -5,7 +5,11 @@ home screen mockup's "Transfer" quick action.
 
 `POST /api/wallet/transfer` `{ toPhone, amountNaira }` — sends money from
 the authenticated user's wallet to another app user identified by phone
-number.
+number. Phone is no longer collected at signup (`docs/AUTH.md`), so this
+only works if the recipient has a phone number on file — accounts
+created before that change, or that set one later. There's no
+email-based alternative lookup yet; a recipient with no phone set can't
+currently receive a transfer this way.
 
 Unlike the purchase flows (`docs/AIRTIME.md` etc.), this does **not**
 reuse `postLedgerEntry`/`debitAndPurchase`, because those touch one
@@ -29,3 +33,6 @@ sides show up correctly in each user's own transaction history.
       a real database
 - [ ] No transfer limits/fraud checks yet — fine for Phase 1 testing, but
       revisit before handling real money at scale
+- [ ] No email-based recipient lookup — since phone isn't collected at
+      signup anymore, new users without a phone on file can't receive a
+      transfer this way yet

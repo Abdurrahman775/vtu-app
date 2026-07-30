@@ -18,6 +18,7 @@ export default async function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Phone</th>
               <th className="px-4 py-3 font-medium">Role</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -31,12 +32,13 @@ export default async function AdminUsersPage() {
               <tr key={user.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
                 <td className="px-4 py-3 text-slate-900 dark:text-slate-100">
                   <span className="flex items-center gap-1.5">
-                    {user.phone}
+                    {user.email}
                     {user.isVerified && (
                       <span title="Identity verified" className="text-blue-600 dark:text-blue-400">✓</span>
                     )}
                   </span>
                 </td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{user.phone}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${

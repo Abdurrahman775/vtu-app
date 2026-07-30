@@ -5,9 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../me/me_repository.dart';
 import '../../auth/auth_repository.dart';
-import '../../transactions/screens/transactions_screen.dart';
 import '../../../core/app_info.dart';
 import '../../../core/theme/theme_mode_provider.dart';
+import 'change_pin_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -214,7 +214,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ),
-                  Text(m.user.phone, style: TextStyle(color: Colors.grey.shade600)),
+                  Text(
+                    m.user.phone != null ? '${m.user.email} · ${m.user.phone}' : m.user.email,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
                 ],
               ),
             ),
@@ -234,11 +237,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.receipt_long_outlined),
-                    title: const Text('Transaction history'),
+                    leading: Icon(m.user.hasPin ? Icons.lock_outlined : Icons.lock_open_outlined),
+                    title: Text(m.user.hasPin ? 'Change transaction PIN' : 'Set transaction PIN'),
+                    subtitle: m.user.hasPin
+                        ? null
+                        : const Text('Required for transfers and purchases once set'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const TransactionsScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => ChangePinScreen(hasPin: m.user.hasPin, email: m.user.email),
+                      ),
                     ),
                   ),
                   const Divider(height: 1),

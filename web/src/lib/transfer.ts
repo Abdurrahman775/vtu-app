@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { LedgerEntryType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { InsufficientBalanceError } from "@/lib/wallet";
+import { InsufficientBalanceError, toNaira } from "@/lib/wallet";
+import { createNotification } from "@/lib/notifications";
 
 export class RecipientNotFoundError extends Error {
   constructor() {
@@ -34,9 +35,15 @@ export async function transferFunds(params: {
   if (!recipient) throw new RecipientNotFoundError();
   if (recipient.id === fromUserId) throw new SelfTransferError();
 
+  const sender = await prisma.user.findUniqueOrThrow({ where: { id: fromUserId } });
+  // Newer accounts may not have a phone (no longer collected at signup —
+  // see docs/AUTH.md); fall back to something identifiable for the
+  // counterparty-facing description/notification text below.
+  const senderLabel = sender.phone ?? sender.email;
+
   const reference = `transfer_${randomUUID()}`;
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const senderWallet = await tx.wallet.findUniqueOrThrow({ where: { userId: fromUserId } });
     const senderBalanceAfter = senderWallet.balanceKobo - amountKobo;
     if (senderBalanceAfter < 0n) throw new InsufficientBalanceError();
@@ -61,7 +68,7 @@ export async function transferFunds(params: {
         amountKobo,
         status: "SUCCESS",
         reference: `${reference}_out`,
-        meta: { direction: "debit", counterpartyPhone: recipient.phone },
+        meta: { direction: "debit", counterpartyPhone: toPhone },
       },
     });
     await tx.ledgerEntry.create({
@@ -71,7 +78,7 @@ export async function transferFunds(params: {
         amountKobo,
         balanceAfterKobo: senderBalanceAfter,
         reference: `ledger_${reference}_out`,
-        description: `Transfer to ${recipient.phone}`,
+        description: `Transfer to ${toPhone}`,
         transactionId: senderTransaction.id,
       },
     });
@@ -84,7 +91,7 @@ export async function transferFunds(params: {
         amountKobo,
         status: "SUCCESS",
         reference: `${reference}_in`,
-        meta: { direction: "credit", counterpartyPhone: senderWallet.userId },
+        meta: { direction: "credit", counterpartyPhone: senderLabel },
       },
     });
     await tx.ledgerEntry.create({
@@ -94,11 +101,48 @@ export async function transferFunds(params: {
         amountKobo,
         balanceAfterKobo: receiverBalanceAfter,
         reference: `ledger_${reference}_in`,
-        description: `Transfer from sender`,
+        description: `Transfer from ${senderLabel}`,
         transactionId: receiverTransaction.id,
       },
     });
 
     return { senderTransaction, receiverTransaction };
   });
+
+  await notifyTransfer({
+    fromUserId,
+    fromPhone: senderLabel,
+    toUserId: recipient.id,
+    toPhone,
+    amountKobo,
+  });
+
+  return result;
+}
+
+async function notifyTransfer(params: {
+  fromUserId: string;
+  fromPhone: string;
+  toUserId: string;
+  toPhone: string;
+  amountKobo: bigint;
+}) {
+  const { fromUserId, fromPhone, toUserId, toPhone, amountKobo } = params;
+  const amountNaira = toNaira(amountKobo).toLocaleString();
+  try {
+    await createNotification({
+      userId: fromUserId,
+      type: "TRANSFER",
+      title: "Transfer sent",
+      body: `You sent ₦${amountNaira} to ${toPhone}.`,
+    });
+    await createNotification({
+      userId: toUserId,
+      type: "TRANSFER",
+      title: "Transfer received",
+      body: `You received ₦${amountNaira} from ${fromPhone}.`,
+    });
+  } catch {
+    // best-effort — the transfer already committed, don't fail the request over this
+  }
 }

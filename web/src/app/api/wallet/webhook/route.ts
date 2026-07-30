@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { postLedgerEntry } from "@/lib/wallet";
+import { postLedgerEntry, toNaira } from "@/lib/wallet";
+import { createNotification } from "@/lib/notifications";
 import { LedgerEntryType } from "@prisma/client";
 
 /**
@@ -46,6 +47,18 @@ export async function POST(request: Request) {
       where: { id: transaction.id },
       data: { status: "SUCCESS", providerReference: event.data.id?.toString() },
     });
+
+    try {
+      await createNotification({
+        userId: transaction.userId,
+        type: "WALLET",
+        title: "Wallet funded",
+        body: `Your wallet was credited with ₦${toNaira(transaction.amountKobo).toLocaleString()}.`,
+        meta: { transactionId: transaction.id },
+      });
+    } catch {
+      // best-effort — funding already applied, don't fail the webhook over this
+    }
   }
 
   return NextResponse.json({ message: "OK" });

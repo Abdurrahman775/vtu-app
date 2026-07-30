@@ -41,9 +41,13 @@ enum ReportStatus {
 
 model User {
   id           String   @id @default(cuid())
-  phone        String   @unique
+  /// Login identifier (OTP is emailed here). Required at signup.
+  email        String   @unique
+  /// Not collected at signup — email+OTP is the only login flow. Kept
+  /// around (nullable) only because wallet-to-wallet transfers still
+  /// look up a recipient by phone; see docs/AUTH.md, docs/TRANSFER.md.
+  phone        String?  @unique
   fullName     String?
-  email        String?  @unique
   role         Role     @default(USER)
   isActive     Boolean  @default(true)
 
@@ -54,6 +58,19 @@ model User {
   /// Set by an admin approving a VerificationRequest, not self-service.
   isVerified   Boolean  @default(false)
 
+  /// bcrypt hash of a 4-digit transaction PIN, set/changed from the
+  /// mobile Profile screen (POST /api/me/pin). Null until the user sets
+  /// one — see docs/TRANSACTION_PIN.md for why it's optional rather than
+  /// required at signup, and how it gates transfers/purchases once set.
+  pinHash            String?
+  /// Consecutive wrong-PIN count, reset to 0 on a correct PIN or a
+  /// successful OTP-gated reset. Locks the account out of transacting
+  /// once it hits the threshold in web/src/lib/pin.ts.
+  pinFailedAttempts  Int       @default(0)
+  /// Set when pinFailedAttempts hits the lockout threshold; null once
+  /// the lockout window passes or the PIN is reset via OTP.
+  pinLockedUntil     DateTime?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -62,6 +79,7 @@ model User {
   otpCodes             OtpCode[]
   reports              TransactionReport[]
   verificationRequests VerificationRequest[]
+  notifications        Notification[]
 }
 
 enum VerificationStatus {
@@ -84,10 +102,10 @@ model VerificationRequest {
   reviewedAt DateTime?
 }
 
-/// Phone-number + OTP is the only auth flow in Phase 1 (no passwords).
+/// Email + OTP is the only auth flow in Phase 1 (no passwords).
 model OtpCode {
   id          String    @id @default(cuid())
-  phone       String
+  email       String
   codeHash    String
   expiresAt   DateTime
   consumedAt  DateTime?
@@ -96,7 +114,7 @@ model OtpCode {
   userId      String?
   user        User?     @relation(fields: [userId], references: [id])
 
-  @@index([phone])
+  @@index([email])
 }
 
 /// balances are stored in kobo (integer) to avoid floating point drift.
@@ -167,6 +185,31 @@ model TransactionReport {
   createdAt     DateTime     @default(now())
 }
 
+enum NotificationType {
+  TRANSACTION
+  WALLET
+  TRANSFER
+  SYSTEM
+}
+
+/// In-app notification, e.g. "your airtime purchase succeeded" or "wallet
+/// funded". Auto-created by the purchase/wallet/transfer flows — see
+/// docs/NOTIFICATIONS.md. Not push (no FCM wired up yet); the mobile app
+/// polls GET /api/notifications.
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String
+  meta      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+}
+
 /// Admin-configurable margin per provider/service, used to price purchases above cost.
 model PricingRule {
   id            String          @id @default(cuid())
@@ -176,4 +219,19 @@ model PricingRule {
   updatedAt     DateTime        @updatedAt
 
   @@unique([service, provider])
+}
+
+/// Admin-uploaded logo image for a provider code (e.g. "MTN", "DSTV",
+/// "IKEDC") shown in the mobile app's provider pickers/transaction list.
+/// `provider` isn't a foreign key to anything — it's just whatever
+/// string code the mobile app already uses (see
+/// `mobile/lib/src/core/widgets/provider_badge.dart`'s `providerBrands`
+/// map), so a logo can be uploaded before or after that code otherwise
+/// exists anywhere. No row for a provider = falls back to a generated
+/// color badge — see docs/PROVIDER_LOGOS.md.
+model ProviderLogo {
+  id        String   @id @default(cuid())
+  provider  String   @unique
+  imageUrl  String
+  updatedAt DateTime @updatedAt
 }

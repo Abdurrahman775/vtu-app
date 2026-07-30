@@ -6,11 +6,11 @@ import '../auth_repository.dart';
 import '../../home/screens/home_screen.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key, required this.phone});
+  const OtpScreen({super.key, required this.email});
 
   static const routePath = '/otp';
 
-  final String phone;
+  final String email;
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -22,17 +22,24 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   String? _error;
 
   Future<void> _verify() async {
-    if (_code.length != 6) return;
+    // Guards against a double-submit race: PinCodeTextField's onCompleted
+    // and a manual tap on the Verify button can both fire before the
+    // first request's setState(loading=true) has painted a disabled
+    // button, sending the code twice — the second attempt would then
+    // fail as "already used" even though the first one succeeded.
+    if (_loading || _code.length != 6) return;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      await ref.read(authRepositoryProvider).verifyOtp(widget.phone, _code);
+      await ref.read(authRepositoryProvider).verifyOtp(widget.email, _code);
       if (!mounted) return;
       context.go(HomeScreen.routePath);
+    } on OtpVerificationException catch (e) {
+      setState(() => _error = e.message);
     } catch (e) {
-      setState(() => _error = 'Invalid or expired code');
+      setState(() => _error = 'Could not verify code. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -41,13 +48,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify your number')),
+      appBar: AppBar(title: const Text('Verify your email')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Enter the code sent to ${widget.phone}'),
+            Text('Enter the code sent to ${widget.email}'),
             const SizedBox(height: 24),
             PinCodeTextField(
               appContext: context,

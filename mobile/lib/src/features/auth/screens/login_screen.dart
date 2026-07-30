@@ -12,7 +12,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _loading = false;
   String? _error;
 
@@ -22,9 +22,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      await ref.read(authRepositoryProvider).requestOtp(_phoneController.text.trim());
+      await ref.read(authRepositoryProvider).requestOtp(_emailController.text.trim());
       if (!mounted) return;
-      context.push(OtpScreen.routePath, extra: _phoneController.text.trim());
+      context.push(OtpScreen.routePath, extra: _emailController.text.trim());
     } catch (e) {
       setState(() => _error = 'Could not send code. Please try again.');
     } finally {
@@ -49,9 +49,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(height: 32),
             TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Phone number'),
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Email address'),
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),

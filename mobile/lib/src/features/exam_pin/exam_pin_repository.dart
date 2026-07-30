@@ -16,12 +16,14 @@ class ExamPinRepository {
   Future<void> purchase({
     required String examBody,
     required int quantity,
+    String? pin,
   }) async {
     final unitPrice = examPinPricesByBody[examBody]!;
     await _api.dio.post(Endpoints.examPinPurchase, data: {
       'examBody': examBody,
       'quantity': quantity,
       'amountNaira': unitPrice * quantity,
+      if (pin != null) 'pin': pin,
     });
   }
 }

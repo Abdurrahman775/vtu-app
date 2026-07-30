@@ -52,6 +52,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             children: [
               _Header(
                 displayName: me.maybeWhen(data: (m) => m.user.displayName, orElse: () => ''),
+                avatarUrl: me.maybeWhen(data: (m) => m.user.avatarFullUrl, orElse: () => null),
                 greeting: _greeting(),
                 onBellTap: () => _comingSoon('Notifications'),
                 onMenuTap: () => Navigator.of(context).push(
@@ -149,12 +150,14 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 class _Header extends StatelessWidget {
   const _Header({
     required this.displayName,
+    required this.avatarUrl,
     required this.greeting,
     required this.onBellTap,
     required this.onMenuTap,
   });
 
   final String displayName;
+  final String? avatarUrl;
   final String greeting;
   final VoidCallback onBellTap;
   final VoidCallback onMenuTap;
@@ -165,7 +168,10 @@ class _Header extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 22,
-          child: Text(displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?'),
+          backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+          child: avatarUrl == null
+              ? Text(displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?')
+              : null,
         ),
         const SizedBox(width: 12),
         Expanded(

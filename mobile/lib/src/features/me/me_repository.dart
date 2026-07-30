@@ -1,16 +1,45 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/endpoints.dart';
 
+/// Matches web/src/app/api/me/avatar/route.ts's ALLOWED_TYPES — dio's
+/// MultipartFile.fromBytes defaults to application/octet-stream, which
+/// the backend would reject, so this must be set explicitly.
+MediaType? _mediaTypeForFilename(String filename) {
+  final lower = filename.toLowerCase();
+  if (lower.endsWith('.png')) return MediaType('image', 'png');
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return MediaType('image', 'jpeg');
+  if (lower.endsWith('.webp')) return MediaType('image', 'webp');
+  return null;
+}
+
 class MeUser {
-  const MeUser({required this.id, required this.phone, this.fullName});
+  const MeUser({
+    required this.id,
+    required this.phone,
+    this.fullName,
+    this.avatarUrl,
+    required this.isVerified,
+    this.latestVerificationRequestStatus,
+  });
 
   final String id;
   final String phone;
   final String? fullName;
+  final String? avatarUrl;
+  final bool isVerified;
+
+  /// One of PENDING / APPROVED / REJECTED, or null if never requested.
+  final String? latestVerificationRequestStatus;
 
   /// Falls back to the phone number until the user sets a display name.
   String get displayName => fullName?.isNotEmpty == true ? fullName! : phone;
+
+  /// Full URL for [avatarUrl] (the API returns a host-relative path).
+  String? get avatarFullUrl => avatarUrl == null ? null : '$kApiHostUrl$avatarUrl';
 }
 
 class MeWallet {
@@ -43,6 +72,9 @@ class Me {
         id: userJson['id'] as String,
         phone: userJson['phone'] as String,
         fullName: userJson['fullName'] as String?,
+        avatarUrl: userJson['avatarUrl'] as String?,
+        isVerified: userJson['isVerified'] as bool? ?? false,
+        latestVerificationRequestStatus: userJson['latestVerificationRequestStatus'] as String?,
       ),
       wallet: MeWallet(
         balanceNaira: (walletJson['balanceNaira'] as num).toDouble(),
@@ -67,6 +99,27 @@ class MeRepository {
 
   Future<void> updateFullName(String fullName) async {
     await _api.dio.patch(Endpoints.me, data: {'fullName': fullName});
+  }
+
+  /// Takes an [XFile] (from image_picker) rather than a dart:io File —
+  /// dart:io doesn't behave the same on web, so reading bytes directly
+  /// through XFile keeps this working on every platform.
+  Future<void> uploadAvatar(XFile imageFile) async {
+    final bytes = await imageFile.readAsBytes();
+    final formData = FormData.fromMap({
+      'avatar': MultipartFile.fromBytes(
+        bytes,
+        filename: imageFile.name,
+        contentType: _mediaTypeForFilename(imageFile.name),
+      ),
+    });
+    await _api.dio.post(Endpoints.meAvatar, data: formData);
+  }
+
+  Future<void> requestVerification({String? note}) async {
+    await _api.dio.post(Endpoints.verificationRequest, data: {
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
   }
 }
 

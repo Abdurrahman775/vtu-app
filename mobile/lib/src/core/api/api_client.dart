@@ -7,6 +7,11 @@ const String kApiBaseUrl = String.fromEnvironment(
   defaultValue: 'http://10.0.2.2:3000/api',
 );
 
+/// Same host as [kApiBaseUrl] without the `/api` suffix — used to resolve
+/// static asset paths like `avatarUrl` (e.g. `/uploads/foo.png`) returned
+/// by the backend, which aren't under `/api`.
+String get kApiHostUrl => kApiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+
 class ApiClient {
   ApiClient._internal() {
     _dio = Dio(

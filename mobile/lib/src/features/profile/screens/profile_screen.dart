@@ -1,16 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../me/me_repository.dart';
 import '../../auth/auth_repository.dart';
 import '../../transactions/screens/transactions_screen.dart';
 import '../../../core/app_info.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _editName(BuildContext context, WidgetRef ref, String currentName) async {
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _uploadingAvatar = false;
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800);
+    if (picked == null) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      await ref.read(meRepositoryProvider).uploadAvatar(picked);
+      ref.invalidate(meProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Could not upload photo. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  Future<void> _editName(String currentName) async {
     final controller = TextEditingController(text: currentName);
     final newName = await showDialog<String>(
       context: context,
@@ -37,30 +63,73 @@ class ProfileScreen extends ConsumerWidget {
       await ref.read(meRepositoryProvider).updateFullName(newName);
       ref.invalidate(meProvider);
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Could not update name. Please try again.')));
       }
     }
   }
 
-  Future<void> _contactSupport(BuildContext context) async {
+  Future<void> _requestVerification() async {
+    final controller = TextEditingController();
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request verification'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('An admin will review your account and confirm your identity.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit')),
+        ],
+      ),
+    );
+
+    if (submitted != true) return;
+
+    try {
+      await ref.read(meRepositoryProvider).requestVerification(note: controller.text.trim());
+      ref.invalidate(meProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Verification request submitted')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Could not submit request. Please try again.')));
+      }
+    }
+  }
+
+  Future<void> _contactSupport() async {
     final uri = Uri(scheme: 'mailto', path: supportEmail, queryParameters: {'subject': 'VTU App support'});
     if (!await launchUrl(uri)) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Email us at $supportEmail')));
       }
     }
   }
 
-  void _showTermsPlaceholder(BuildContext context) {
+  void _showTermsPlaceholder() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Terms & Privacy Policy will be added once provided by the business')),
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -80,11 +149,11 @@ class ProfileScreen extends ConsumerWidget {
     if (confirmed != true) return;
 
     await ref.read(authRepositoryProvider).logout();
-    if (context.mounted) context.go('/login');
+    if (mounted) context.go('/login');
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final me = ref.watch(meProvider);
 
     return Scaffold(
@@ -96,32 +165,55 @@ class ProfileScreen extends ConsumerWidget {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    child: Text(
-                      m.user.displayName.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(fontSize: 28),
-                    ),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundImage: m.user.avatarFullUrl != null
+                            ? NetworkImage(m.user.avatarFullUrl!)
+                            : null,
+                        child: m.user.avatarFullUrl == null
+                            ? Text(
+                                m.user.displayName.substring(0, 1).toUpperCase(),
+                                style: const TextStyle(fontSize: 28),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: InkWell(
+                          onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                          child: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            child: _uploadingAvatar
+                                ? const Padding(
+                                    padding: EdgeInsets.all(3),
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(m.user.displayName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                      if (m.user.isVerified) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.verified, size: 18, color: Colors.blue.shade600),
+                      ],
                       IconButton(
                         icon: const Icon(Icons.edit, size: 18),
-                        onPressed: () => _editName(context, ref, m.user.fullName ?? ''),
+                        onPressed: () => _editName(m.user.fullName ?? ''),
                       ),
                     ],
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(m.user.phone, style: TextStyle(color: Colors.grey.shade600)),
-                      const SizedBox(width: 6),
-                      Icon(Icons.verified, size: 16, color: Colors.green.shade600),
-                    ],
-                  ),
+                  Text(m.user.phone, style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             ),
@@ -148,6 +240,8 @@ class ProfileScreen extends ConsumerWidget {
                       MaterialPageRoute(builder: (_) => const TransactionsScreen()),
                     ),
                   ),
+                  const Divider(height: 1),
+                  _VerificationTile(user: m.user, onRequest: _requestVerification),
                 ],
               ),
             ),
@@ -160,14 +254,14 @@ class ProfileScreen extends ConsumerWidget {
                     leading: const Icon(Icons.support_agent_outlined),
                     title: const Text('Contact support'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _contactSupport(context),
+                    onTap: _contactSupport,
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.description_outlined),
                     title: const Text('Terms & Privacy Policy'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showTermsPlaceholder(context),
+                    onTap: _showTermsPlaceholder,
                   ),
                 ],
               ),
@@ -186,7 +280,7 @@ class ProfileScreen extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Log out', style: TextStyle(color: Colors.red)),
-                onTap: () => _confirmLogout(context, ref),
+                onTap: _confirmLogout,
               ),
             ),
           ],
@@ -194,6 +288,41 @@ class ProfileScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(child: Text('Could not load profile')),
       ),
+    );
+  }
+}
+
+class _VerificationTile extends StatelessWidget {
+  const _VerificationTile({required this.user, required this.onRequest});
+
+  final MeUser user;
+  final VoidCallback onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    if (user.isVerified) {
+      return ListTile(
+        leading: Icon(Icons.verified, color: Colors.blue.shade600),
+        title: const Text('Identity verification'),
+        subtitle: const Text('Verified'),
+      );
+    }
+
+    if (user.latestVerificationRequestStatus == 'PENDING') {
+      return const ListTile(
+        leading: Icon(Icons.hourglass_top_outlined),
+        title: Text('Identity verification'),
+        subtitle: Text('Pending review'),
+      );
+    }
+
+    final wasRejected = user.latestVerificationRequestStatus == 'REJECTED';
+    return ListTile(
+      leading: const Icon(Icons.shield_outlined),
+      title: const Text('Identity verification'),
+      subtitle: Text(wasRejected ? 'Not approved — tap to request again' : 'Not verified'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onRequest,
     );
   }
 }

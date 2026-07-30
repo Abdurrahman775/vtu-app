@@ -6,6 +6,8 @@ class Endpoints {
   static const otpVerify = '/auth/otp/verify';
 
   static const me = '/me';
+  static const meAvatar = '/me/avatar';
+  static const verificationRequest = '/verification/request';
 
   static const walletBalance = '/wallet/balance';
   static const walletFund = '/wallet/fund';

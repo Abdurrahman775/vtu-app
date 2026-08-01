@@ -43,21 +43,38 @@ export async function GET(request: Request) {
   }
 }
 
-const patchBodySchema = z.object({
-  fullName: z.string().trim().min(1).max(100),
-});
+const patchBodySchema = z
+  .object({
+    fullName: z.string().trim().min(1).max(100).optional(),
+    /// A string sets/changes the phone; `null` removes it; omitted leaves it untouched.
+    phone: z.string().trim().min(10).max(15).nullable().optional(),
+  })
+  .refine((body) => body.fullName !== undefined || body.phone !== undefined, {
+    message: "Nothing to update",
+  });
 
 export async function PATCH(request: Request) {
   try {
     const session = requireSession(request);
     const parsed = patchBodySchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    const { fullName, phone } = parsed.data;
+
+    if (phone) {
+      const phoneTaken = await prisma.user.findUnique({ where: { phone } });
+      if (phoneTaken && phoneTaken.id !== session.userId) {
+        return NextResponse.json({ error: "Phone number is already in use" }, { status: 409 });
+      }
     }
 
     const user = await prisma.user.update({
       where: { id: session.userId },
-      data: { fullName: parsed.data.fullName },
+      data: {
+        ...(fullName !== undefined && { fullName }),
+        ...(phone !== undefined && { phone }),
+      },
     });
 
     return NextResponse.json({

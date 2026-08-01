@@ -16,6 +16,7 @@ import '../../transactions/screens/transactions_screen.dart';
 import '../../transactions/transactions_repository.dart';
 import '../../transfer/screens/transfer_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../../core/wallet_visibility_provider.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -25,8 +26,6 @@ class HomeTab extends ConsumerStatefulWidget {
 }
 
 class _HomeTabState extends ConsumerState<HomeTab> {
-  bool _balanceHidden = false;
-
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
@@ -79,8 +78,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   balanceNaira: m.wallet.balanceNaira,
                   virtualAccountNumber: m.wallet.virtualAccountNumber,
                   virtualAccountName: m.wallet.virtualAccountName,
-                  hidden: _balanceHidden,
-                  onToggleHidden: () => setState(() => _balanceHidden = !_balanceHidden),
+                  hidden: ref.watch(balanceHiddenProvider),
+                  onToggleHidden: () => ref.read(balanceHiddenProvider.notifier).toggle(),
                   onAddMoney: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const WalletScreen()),
                   ),

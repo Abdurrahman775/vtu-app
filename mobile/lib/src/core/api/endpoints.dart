@@ -29,4 +29,5 @@ class Endpoints {
   static const notificationsReadAll = '/notifications/read-all';
 
   static const providerLogos = '/provider-logos';
+  static const socialLinks = '/social-links';
 }

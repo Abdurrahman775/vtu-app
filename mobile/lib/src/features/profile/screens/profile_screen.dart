@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../me/me_repository.dart';
 import '../../auth/auth_repository.dart';
+import '../../social_links/social_links_repository.dart';
 import '../../../core/app_info.dart';
-import '../../../core/theme/theme_mode_provider.dart';
-import 'change_pin_screen.dart';
+import 'account_screen.dart';
+import 'personal_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -156,6 +158,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final me = ref.watch(meProvider);
+    final socialLinks = ref.watch(socialLinksProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -222,13 +225,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const _SectionHeader('Account'),
             Card(
               child: Column(
                 children: [
                   ListTile(
+                    leading: const Icon(Icons.account_circle_outlined),
+                    title: const Text('Account'),
+                    subtitle: const Text('See your account details'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AccountScreen()),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.badge_outlined),
+                    title: const Text('Personal'),
+                    subtitle: const Text('Manage your email and phone number'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const PersonalScreen()),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
                     leading: const Icon(Icons.account_balance_outlined),
-                    title: const Text('Linked bank account'),
+                    title: const Text('Payment Method'),
                     subtitle: Text(
                       m.wallet.virtualAccountNumber != null
                           ? '${m.wallet.virtualAccountNumber} • ${m.wallet.virtualAccountBankName ?? ''}'
@@ -237,22 +259,46 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: Icon(m.user.hasPin ? Icons.lock_outlined : Icons.lock_open_outlined),
-                    title: Text(m.user.hasPin ? 'Change transaction PIN' : 'Set transaction PIN'),
-                    subtitle: m.user.hasPin
-                        ? null
-                        : const Text('Required for transfers and purchases once set'),
+                    leading: const Icon(Icons.settings_outlined),
+                    title: const Text('Settings'),
+                    subtitle: const Text('Appearance, notification and security settings'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ChangePinScreen(hasPin: m.user.hasPin, email: m.user.email),
-                      ),
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
                     ),
                   ),
-                  const Divider(height: 1),
-                  _VerificationTile(user: m.user, onRequest: _requestVerification),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: _VerificationRow(user: m.user, onRequest: _requestVerification),
+            ),
+            socialLinks.maybeWhen(
+              data: (links) => links.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        const _SectionHeader('Follow us'),
+                        Card(
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < links.length; i++) ...[
+                                if (i > 0) const Divider(height: 1),
+                                ListTile(
+                                  leading: Icon(_iconForPlatform(links[i].platform)),
+                                  title: Text('Follow on ${_labelForPlatform(links[i].platform)}'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => launchUrl(Uri.parse(links[i].url)),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+              orElse: () => const SizedBox.shrink(),
             ),
             const SizedBox(height: 20),
             const _SectionHeader('Support'),
@@ -273,30 +319,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     onTap: _showTermsPlaceholder,
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const _SectionHeader('Appearance'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Theme'),
-                    const SizedBox(height: 12),
-                    SegmentedButton<ThemeMode>(
-                      segments: const [
-                        ButtonSegment(value: ThemeMode.system, label: Text('System')),
-                        ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-                        ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
-                      ],
-                      selected: {ref.watch(themeModeProvider)},
-                      onSelectionChanged: (selection) =>
-                          ref.read(themeModeProvider.notifier).setThemeMode(selection.first),
-                    ),
-                  ],
-                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -323,10 +345,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+
+  IconData _iconForPlatform(String platform) {
+    switch (platform) {
+      case 'INSTAGRAM':
+        return Icons.camera_alt_outlined;
+      case 'YOUTUBE':
+        return Icons.play_circle_outline;
+      case 'X':
+        return Icons.alternate_email;
+      case 'FACEBOOK':
+        return Icons.facebook;
+      case 'TIKTOK':
+        return Icons.music_note_outlined;
+      case 'WHATSAPP':
+        return Icons.chat_outlined;
+      default:
+        return Icons.link;
+    }
+  }
+
+  String _labelForPlatform(String platform) {
+    switch (platform) {
+      case 'X':
+        return 'X';
+      default:
+        return platform[0] + platform.substring(1).toLowerCase();
+    }
+  }
 }
 
-class _VerificationTile extends StatelessWidget {
-  const _VerificationTile({required this.user, required this.onRequest});
+class _VerificationRow extends StatelessWidget {
+  const _VerificationRow({required this.user, required this.onRequest});
 
   final MeUser user;
   final VoidCallback onRequest;
@@ -335,26 +385,26 @@ class _VerificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     if (user.isVerified) {
       return ListTile(
-        leading: Icon(Icons.verified, color: Colors.blue.shade600),
-        title: const Text('Identity verification'),
-        subtitle: const Text('Verified'),
+        title: const Text('Verification Status'),
+        trailing: Text('Verified', style: TextStyle(color: Colors.green.shade600, fontWeight: FontWeight.w600)),
       );
     }
 
     if (user.latestVerificationRequestStatus == 'PENDING') {
       return const ListTile(
-        leading: Icon(Icons.hourglass_top_outlined),
-        title: Text('Identity verification'),
-        subtitle: Text('Pending review'),
+        title: Text('Verification Status'),
+        trailing: Text('Pending review', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
       );
     }
 
     final wasRejected = user.latestVerificationRequestStatus == 'REJECTED';
     return ListTile(
-      leading: const Icon(Icons.shield_outlined),
-      title: const Text('Identity verification'),
-      subtitle: Text(wasRejected ? 'Not approved — tap to request again' : 'Not verified'),
-      trailing: const Icon(Icons.chevron_right),
+      title: const Text('Verification Status'),
+      subtitle: wasRejected ? const Text('Not approved — tap to request again') : null,
+      trailing: Text(
+        wasRejected ? 'Not approved' : 'Not verified',
+        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+      ),
       onTap: onRequest,
     );
   }

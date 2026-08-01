@@ -139,6 +139,9 @@ export default async function AdminOverviewPage() {
             <Link href="/admin/provider-logos" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950">
               Manage provider logos
             </Link>
+            <Link href="/admin/social-links" className="rounded-lg px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950">
+              Manage social links
+            </Link>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/provider-logos", label: "Provider Logos" },
+  { href: "/admin/social-links", label: "Social Links" },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

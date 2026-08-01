@@ -235,3 +235,13 @@ model ProviderLogo {
   imageUrl  String
   updatedAt DateTime @updatedAt
 }
+
+/// Admin-configured "follow us" link shown on the mobile Profile screen
+/// — only rendered there if a row exists for that platform, so the
+/// section disappears entirely until an admin sets at least one.
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String   @unique
+  url       String
+  updatedAt DateTime @updatedAt
+}

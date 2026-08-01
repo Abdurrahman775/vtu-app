@@ -12,6 +12,13 @@ class PinException implements Exception {
   final String message;
 }
 
+/// Carries the backend's actual reason a phone-number update was
+/// rejected (e.g. "Phone number is already in use").
+class PhoneUpdateException implements Exception {
+  const PhoneUpdateException(this.message);
+  final String message;
+}
+
 /// Matches web/src/app/api/me/avatar/route.ts's ALLOWED_TYPES — dio's
 /// MultipartFile.fromBytes defaults to application/octet-stream, which
 /// the backend would reject, so this must be set explicitly.
@@ -118,6 +125,19 @@ class MeRepository {
 
   Future<void> updateFullName(String fullName) async {
     await _api.dio.patch(Endpoints.me, data: {'fullName': fullName});
+  }
+
+  /// Sets/changes the phone number, or removes it entirely if [phone] is
+  /// null — phone isn't collected at signup (docs/AUTH.md), so this is
+  /// the only way to add or remove one.
+  Future<void> updatePhone(String? phone) async {
+    try {
+      await _api.dio.patch(Endpoints.me, data: {'phone': phone});
+    } on DioException catch (e) {
+      final message = e.response?.data is Map ? e.response?.data['error'] as String? : null;
+      if (message != null) throw PhoneUpdateException(message);
+      rethrow;
+    }
   }
 
   /// Takes an [XFile] (from image_picker) rather than a dart:io File —

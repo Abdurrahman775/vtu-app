@@ -23,7 +23,8 @@ This is a monorepo with two apps sharing one backend contract:
 - `docs/` — one markdown file per feature (`AUTH.md`, `WALLET.md`,
   `AIRTIME.md`, `DATA.md`, `CABLE.md`, `EXAM_PIN.md`, `ELECTRICITY.md`,
   `TRANSFER.md`, `NOTIFICATIONS.md`, `RECEIPTS.md`, `STATEMENT.md`,
-  `PROVIDER_LOGOS.md`, `TRANSACTION_PIN.md`, `ADMIN.md`), each
+  `PROVIDER_LOGOS.md`, `TRANSACTION_PIN.md`, `PROFILE.md`,
+  `SOCIAL_LINKS.md`, `ADMIN.md`), each
   with a design summary and a Status checklist of what's implemented vs.
   still stubbed. Update the relevant doc's Status section whenever you
   finish or start a feature area — that checklist is the source of truth
